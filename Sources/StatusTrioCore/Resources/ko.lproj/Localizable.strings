@@ -1,3 +1,4 @@
+/* Modified in the procaross/status-trio UI fork. */
 "menu.version" = "Status Trio %@";
 "menu.settings" = "설정…";
 "menu.quit" = "Status Trio 종료";
@@ -220,3 +221,5 @@
 "settings.audio.displayRules" = "표시 규칙";
 "settings.audio.activeDeviceFootnote" = "현재 활성화된 오디오 출력 기기는 강조 색상으로 표시됩니다.";
 "settings.audio.inUse" = "사용 중";
+
+"settings.preview.panel" = "패널 미리보기";

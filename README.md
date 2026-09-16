@@ -1,3 +1,5 @@
+> **Personal UI fork:** Native Liquid Glass panel refinements, compact controls, and a live panel preview. See [fork details](docs/liquid-glass-fork.md). Upstream auto-updates are disabled in this build. Original project and attribution follow below.
+
 <p align="center">
   <img src="screenshots/status-style.png" width="288" alt="Four Status Trio menu bar icon styles rendered from different settings">
 </p>

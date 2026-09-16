@@ -19,7 +19,7 @@
     <key>CFBundleShortVersionString</key>
     <string>1.1.0</string>
     <key>CFBundleVersion</key>
-    <string>8</string>
+    <string>9</string>
     <key>LSMinimumSystemVersion</key>
     <string>15.0</string>
     <key>LSUIElement</key>
@@ -30,10 +30,12 @@
     <string>Used to show the current Wi-Fi network name in the popover and, when you open Wi-Fi details, to read network names, scan results, and connection information.</string>
     <key>NSBluetoothAlwaysUsageDescription</key>
     <string>Used only when you open Bluetooth details to show paired-device connection status.</string>
+    <key>StatusTrioUpdatesEnabled</key>
+    <false/>
     <key>SUEnableInstallerLauncherService</key>
     <true/>
     <key>SUFeedURL</key>
-    <string>https://raw.githubusercontent.com/lingyired/status-trio/main/appcast.xml</string>
+    <string>https://raw.githubusercontent.com/procaross/status-trio/main/appcast.xml</string>
     <key>SUPublicEDKey</key>
     <string>N5FLwhXCzo7Z/8z3lOWbOJ7aW04hvXxI7LUk+6f+yDQ=</string>
 </dict>

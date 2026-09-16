@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 import SwiftUI
 
@@ -6,8 +7,17 @@ struct PopoverSectionView: View {
     @ObservedObject var statusStore: SystemStatusStore
     @EnvironmentObject private var localization: Localization
 
+    var previewPopover: () -> Void = {}
+
     var body: some View {
         SettingsPage {
+            HStack {
+                Text(localization.string(.settingsTabPanel))
+                    .font(.system(size: 18, weight: .semibold))
+                Spacer()
+                Button(localization.string(.settingsPreviewPanel), systemImage: "macwindow", action: previewPopover)
+                    .controlSize(.large)
+            }
             refreshIntervalGroup
             popupOrderGroup
         }

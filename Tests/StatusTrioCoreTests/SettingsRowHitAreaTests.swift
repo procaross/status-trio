@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 import SwiftUI
 import XCTest
@@ -5,70 +6,30 @@ import XCTest
 
 @MainActor
 final class SettingsRowHitAreaTests: XCTestCase {
-    func testPopupSettingsButtonUsesFullRowHitArea() {
-        let localization = makeLocalization()
-        let settings = makeSettings()
-        let store = SystemStatusStore(
-            batteryMonitor: EmptyBatteryMonitor(),
-            wifiMonitor: EmptyWiFiMonitor(),
-            volumeMonitor: EmptyVolumeMonitor()
-        )
-        let view = StatusPopoverView(
-            store: store,
-            settings: settings,
-            requestWiFiNameAccess: {},
-            requestBluetoothAuthorization: {},
-            openBatterySettings: {},
-            openWiFiSettings: {},
-            openLocationSettings: {},
-            openBluetoothSettings: {},
-            openSettings: {},
-            openSoundSettings: {},
-            quit: {}
-        )
-        .environmentObject(localization)
-
-        let hitAreaWidths = interactiveSubViewWidths(
-            for: view,
-            size: NSSize(width: 300, height: 600)
-        )
-
-        XCTAssertTrue(
-            hitAreaWidths.contains { abs($0 - 268) < 0.5 },
-            "Expected the Settings row to react across the popup content width, got \(hitAreaWidths)"
-        )
+    func testPopupToolbarControlsKeepUsableSizeWithLongLocalizedLabels() {
+        // Measure the public layout contract, not SwiftUI's private subview tree.
+        // The toolbar must retain its hit area even with a long accessibility label.
+        for title in ["设置…", "Einstellungen öffnen…", "فتح الإعدادات"] {
+            let view = PopoverIconButton(symbol: "gearshape", title: title, action: {})
+            let hostingView = NSHostingView(rootView: view)
+            hostingView.layoutSubtreeIfNeeded()
+            XCTAssertGreaterThanOrEqual(hostingView.fittingSize.width, 28)
+            XCTAssertGreaterThanOrEqual(hostingView.fittingSize.height, 28)
+            XCTAssertLessThanOrEqual(hostingView.fittingSize.width, 44)
+        }
     }
 
-    func testPreferenceCheckboxRowUsesFullRowHitArea() {
+    func testPreferenceCheckboxRowExpandsToAvailableWidth() {
         let localization = makeLocalization()
         let view = PreferenceCheckboxRow(
             label: .settingsBatteryShowPercentage,
             isOn: .constant(false)
         )
         .environmentObject(localization)
-
-        let hitAreaWidths = interactiveSubViewWidths(
-            for: view,
-            size: NSSize(width: 300, height: 40)
-        )
-
-        XCTAssertTrue(
-            hitAreaWidths.contains { abs($0 - 300) < 0.5 },
-            "Expected the checkbox row to react across its full width, got \(hitAreaWidths)"
-        )
-    }
-
-    private func interactiveSubViewWidths<V: View>(
-        for view: V,
-        size: NSSize
-    ) -> [CGFloat] {
-        let hostingView = NSHostingView(rootView: view)
-        hostingView.frame = NSRect(origin: .zero, size: size)
-        hostingView.layoutSubtreeIfNeeded()
-
-        return hostingView.subviews
-            .filter { !$0.isHidden && $0.frame.height > 0 }
-            .map(\.frame.width)
+        let controller = NSHostingController(rootView: view)
+        let size = controller.sizeThatFits(in: NSSize(width: 300, height: 40))
+        XCTAssertEqual(size.width, 300, accuracy: 0.5)
+        XCTAssertGreaterThan(size.height, 0)
     }
 
     private func makeLocalization() -> Localization {
@@ -80,47 +41,4 @@ final class SettingsRowHitAreaTests: XCTestCase {
         return localization
     }
 
-    private func makeSettings() -> SettingsStore {
-        let suiteName = "StatusTrioCoreTests.SettingsHitAreaStore.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        return SettingsStore(defaults: defaults)
-    }
-}
-
-@MainActor
-private final class EmptyBatteryMonitor: BatteryMonitoring {
-    let updates = AsyncStream<BatteryStatus> { continuation in
-        continuation.finish()
-    }
-
-    func start() {}
-    func stop() {}
-    func refresh() {}
-    func recover() {}
-}
-
-@MainActor
-private final class EmptyWiFiMonitor: WiFiMonitoring {
-    let updates = AsyncStream<WiFiStatus> { continuation in
-        continuation.finish()
-    }
-
-    func start() {}
-    func stop() {}
-    func refresh() {}
-    func recover() {}
-    func requestNameAccess() {}
-}
-
-@MainActor
-private final class EmptyVolumeMonitor: VolumeMonitoring {
-    let updates = AsyncStream<VolumeStatus> { continuation in
-        continuation.finish()
-    }
-
-    func start() {}
-    func stop() {}
-    func refresh() {}
-    func recover() {}
 }

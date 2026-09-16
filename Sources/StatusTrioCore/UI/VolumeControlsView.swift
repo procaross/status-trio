@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import SwiftUI
 
 struct VolumeControlsView: View {
@@ -14,71 +15,67 @@ struct VolumeControlsView: View {
     @State private var isAdjusting = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Image(systemName: "speaker.wave.2.fill")
-                    .frame(width: 24)
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-
-                Text(StatusPresentation.volumeTitle(volume, localization: localization))
-                    .font(.headline.weight(.semibold))
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                PopoverStatusBadge(symbol: "speaker.wave.2", tint: .indigo)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(localization.string(.settingsPopupOrderVolume))
+                        .font(.system(size: 12, weight: .medium))
+                    Text(StatusPresentation.volumeSubtitle(volume, localization: localization))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Spacer(minLength: 4)
+                Text(percentageText)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
                     .monospacedDigit()
-
-                Spacer()
-
-                Button(
-                    localization.string(.volumeActionOpenSettings),
-                    systemImage: "gearshape",
+                PopoverIconButton(
+                    symbol: "ellipsis",
+                    title: localization.string(.volumeActionOpenSettings),
                     action: onOpenSoundSettings
                 )
-                .labelStyle(.iconOnly)
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .help(localization.string(.volumeActionOpenSettings))
-                .accessibilityLabel(localization.string(.volumeActionOpenSettings))
-                .frame(width: 24, height: 24)
             }
 
             HStack(spacing: 10) {
-                Button(
-                    volume.isMuted ? localization.string(.volumeUnmuted) : localization.string(.volumeMuted),
-                    systemImage: volume.isMuted ? "speaker.slash.fill" : "speaker.fill",
+                PopoverIconButton(
+                    symbol: volume.isMuted ? "speaker.slash" : "speaker.wave.1",
+                    title: localization.string(volume.isMuted ? .volumeUnmuted : .volumeMuted),
                     action: onToggleMute
                 )
-                .labelStyle(.iconOnly)
-                .buttonStyle(.plain)
-                .foregroundStyle(volume.isMuted ? Color.red : Color.secondary)
-                .help(volume.isMuted ? localization.string(.volumeUnmuted) : localization.string(.volumeMuted))
                 .disabled(!isEnabled)
-                .frame(width: 24)
+                .accessibilityValue(volume.isMuted ? localization.string(.volumeMuted) : "")
 
                 Slider(
-                    value: $draftVolume,
+                    value: Binding(
+                        get: { draftVolume },
+                        set: { newValue in
+                            draftVolume = newValue
+                            updateVolume(newValue)
+                        }
+                    ),
                     in: 0...1,
                     onEditingChanged: handleVolumeEditing
                 )
+                .controlSize(.large)
                 .tint(volume.isMuted ? Color.secondary : Color.accentColor)
                 .disabled(!isEnabled)
                 .accessibilityLabel(localization.string(.volumeAccessibilityLabel))
                 .accessibilityValue(percentageText)
 
-                Image(systemName: "speaker.wave.3.fill")
+                Image(systemName: "speaker.wave.3")
+                    .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
             }
+            .padding(.vertical, 2)
 
-            Divider()
-
-            HStack(spacing: 10) {
-                Image(systemName: "hifispeaker.fill")
-                    .frame(width: 24)
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-
-                Text(localization.string(.volumeOutputTitle))
-                    .font(.headline.weight(.semibold))
-            }
+            Text(localization.string(.volumeOutputTitle))
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
+                .padding(.top, 2)
+                .padding(.leading, 4)
 
             OutputDeviceList(
                 settings: settings,
@@ -87,9 +84,6 @@ struct VolumeControlsView: View {
             )
         }
         .onAppear(perform: synchronizeVolume)
-        .onChange(of: draftVolume) { _, newValue in
-            updateVolume(newValue)
-        }
         .onChange(of: volume.scalar) { _, _ in
             guard !isAdjusting else { return }
             synchronizeVolume()
@@ -97,12 +91,16 @@ struct VolumeControlsView: View {
     }
 
     private var percentageText: String {
-        guard draftVolume.isFinite else { return "—" }
-        return "\(Int((min(1, max(0, draftVolume)) * 100).rounded()))%"
+        guard let scalar = volume.scalar, scalar.isFinite else { return "—" }
+        let displayedScalar = isAdjusting ? draftVolume : scalar
+        return min(1, max(0, displayedScalar)).formatted(
+            .percent.precision(.fractionLength(0)).locale(localization.resolvedLanguage.locale)
+        )
     }
 
     private func handleVolumeEditing(_ isEditing: Bool) {
         isAdjusting = isEditing
+        if !isEditing { synchronizeVolume() }
     }
 
     private func updateVolume(_ newValue: Double) {

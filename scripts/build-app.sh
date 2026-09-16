@@ -149,7 +149,7 @@ chmod +x "$CONTENTS/MacOS/StatusTrio"
 # so restore the real SDK version before signing.
 SDK_VERSION="$(xcrun --sdk macosx --show-sdk-version)"
 if [[ "${SDK_VERSION%%.*}" -ge 26 ]]; then
-    TOOLCHAIN_PLATFORM_VERSION="26.0"
+    TOOLCHAIN_PLATFORM_VERSION="$SDK_VERSION"
     VTMP_BINARY="$(mktemp "${TMPDIR:-/tmp}/StatusTrio.vtool.XXXXXX")"
     xcrun vtool         -set-build-version macos 15.0 "$TOOLCHAIN_PLATFORM_VERSION"         -replace         -output "$VTMP_BINARY"         "$CONTENTS/MacOS/StatusTrio"
     mv "$VTMP_BINARY" "$CONTENTS/MacOS/StatusTrio"

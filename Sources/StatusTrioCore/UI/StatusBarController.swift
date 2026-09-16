@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 import Combine
 import SwiftUI
@@ -266,9 +267,29 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
                 quit: quitAction
             )
         }
+        // Keep the hosting surface transparent. NSPopover supplies native Liquid
+        // Glass on macOS 26+; an extra material here would flatten it into gray.
         let hostingController = NSHostingController(rootView: rootView)
         hostingController.sizingOptions = [.preferredContentSize]
         popover.contentViewController = hostingController
+    }
+
+    /// The settings preview uses the same live popover as the menu bar.
+    func showPopover() {
+        guard !popover.isShown else { return }
+        if isStatusItemVisible, let button = statusItem.button {
+            presentPopover(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        } else if let screen = NSScreen.main ?? NSScreen.screens.first {
+            // Dock-only mode has no status item to anchor to, and settings has
+            // already closed. Use the existing invisible anchor on this screen.
+            let visibleFrame = screen.visibleFrame
+            let anchor = dockAnchor(at: NSPoint(x: visibleFrame.midX, y: visibleFrame.midY))
+            presentPopover(
+                relativeTo: anchor.view.bounds,
+                of: anchor.view,
+                preferredEdge: anchor.preferredEdge
+            )
+        }
     }
 
     private func togglePopover() {
@@ -638,7 +659,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             settingsAction: #selector(handleOpenSettings),
             localization: localization,
             updateTarget: self,
-            updateAction: #selector(handleCheckForUpdates)
+            updateAction: UpdaterManager.updatesEnabled(in: Bundle.main.infoDictionary ?? [:])
+                ? #selector(handleCheckForUpdates) : nil
         )
         guard let button = statusItem.button else { return }
         menu.popUp(

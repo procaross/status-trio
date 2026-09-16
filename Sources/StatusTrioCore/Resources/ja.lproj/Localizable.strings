@@ -1,3 +1,4 @@
+/* Modified in the procaross/status-trio UI fork. */
 "menu.version" = "Status Trio %@";
 "menu.settings" = "設定…";
 "menu.quit" = "Status Trioを終了";
@@ -220,3 +221,5 @@
 "settings.audio.displayRules" = "表示ルール";
 "settings.audio.activeDeviceFootnote" = "現在アクティブな音声出力デバイスはアクセントカラーでハイライトされます。";
 "settings.audio.inUse" = "使用中";
+
+"settings.preview.panel" = "パネルをプレビュー";

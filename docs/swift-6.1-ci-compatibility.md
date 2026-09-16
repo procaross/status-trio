@@ -1,5 +1,7 @@
 # Swift 6.1 CI 兼容性规则
 
+> 此文保留上游兼容性事故与规则。本分支仍以 Xcode 16.4 验证兼容性，另用 Xcode 26.6 打包 Liquid Glass 版本；当前环境以 AGENTS.md 和 release.yml 为准。
+
 本文记录 Status Trio 在 GitHub Actions 上发布时遇到的工具链兼容问题，以及后续开发和发布必须遵守的规则。
 
 ## 结论

@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case menuVersion = "menu.version"
     case menuCheckForUpdates = "menu.checkForUpdates"
@@ -54,6 +55,7 @@ enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case settingsMenuBarWiFiIconForHotspot = "settings.menuBar.wifiIconForHotspot"
     case settingsMenuBarWiFiIconForTemporaryConnection = "settings.menuBar.wifiIconForTemporaryConnection"
     case settingsMenuBarWiFiIconForInternetSharing = "settings.menuBar.wifiIconForInternetSharing"
+    case settingsPreviewPanel = "settings.preview.panel"
     case settingsPreviewHint = "settings.preview.hint"
     case settingsPreviewDark = "settings.preview.dark"
     case settingsPreviewLight = "settings.preview.light"

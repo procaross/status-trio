@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 import SwiftUI
 
@@ -6,6 +7,8 @@ struct SettingsView: View {
     @ObservedObject var store: SettingsStore
     @ObservedObject var statusStore: SystemStatusStore
     @ObservedObject var localization: Localization
+
+    var previewPopover: () -> Void = {}
 
     @State private var selectedSection: Section = .menuBar
 
@@ -112,7 +115,7 @@ struct SettingsView: View {
         case .menuBar:
             MenuBarSectionView(store: store, statusStore: statusStore)
         case .popover:
-            PopoverSectionView(store: store, statusStore: statusStore)
+            PopoverSectionView(store: store, statusStore: statusStore, previewPopover: previewPopover)
         case .audio:
             AudioSectionView(store: store, statusStore: statusStore)
         case .general:
