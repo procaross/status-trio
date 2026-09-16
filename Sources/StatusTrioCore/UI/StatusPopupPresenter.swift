@@ -1,10 +1,12 @@
 import AppKit
+import Combine
 
 /// A transparent window lets glass sample the desktop instead of an opaque
 /// NSPopover background. Older systems keep the native popover implementation.
 @MainActor
-final class StatusPopupPresenter: NSObject, NSPopoverDelegate, NSWindowDelegate {
+final class StatusPopupPresenter: NSObject, NSPopoverDelegate {
     private let legacy = NSPopover()
+    private var deactivationObservation: AnyCancellable?
     private var panel: GlassPanel?
     private var container: PopupContentController?
     private var anchorRect = NSRect.zero
@@ -35,6 +37,15 @@ final class StatusPopupPresenter: NSObject, NSPopoverDelegate, NSWindowDelegate 
         super.init()
         legacy.behavior = .transient
         legacy.delegate = self
+        deactivationObservation = NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    // A temporary key-window change inside this app (sheets or
+                    // accessibility activation) is not an outside dismissal.
+                    guard !NSApp.isActive else { return }
+                    self?.performClose(nil)
+                }
+            }
     }
 
     var isShown: Bool { Self.usesGlassPanel ? panel?.isVisible == true : legacy.isShown }
@@ -63,7 +74,6 @@ final class StatusPopupPresenter: NSObject, NSPopoverDelegate, NSWindowDelegate 
             newPanel.hidesOnDeactivate = false
             newPanel.level = .popUpMenu
             newPanel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary, .transient, .ignoresCycle]
-            newPanel.delegate = self
             newPanel.onCancel = { [weak self] in self?.performClose(nil) }
             newPanel.title = "Status Trio"
             panel = newPanel
@@ -85,12 +95,6 @@ final class StatusPopupPresenter: NSObject, NSPopoverDelegate, NSWindowDelegate 
     }
 
     func popoverDidClose(_ notification: Notification) { onClose?() }
-
-    func windowDidResignKey(_ notification: Notification) {
-        // Password sheets must remain usable when they take keyboard focus.
-        guard panel?.attachedSheet == nil else { return }
-        performClose(nil)
-    }
 
     private func resize(to size: NSSize) {
         guard let panel, size.width > 0, size.height > 0,

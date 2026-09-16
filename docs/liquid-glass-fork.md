@@ -11,7 +11,7 @@ This fork preserves Status Trio's original license and attribution. It changes t
 - Settings → panel → Preview panel opens the actual live popup. This closes the settings window first, so the preview uses the same activation and dismissal behavior as a menu-bar click.
 - Respect Reduce Transparency with opaque system backgrounds. Do not add continuous animations, custom rendering loops, private material APIs, or extra monitoring timers.
 - Keep the native menu-bar button and accessibility actions, using a compact slot and a circular selection even for wide icon configurations. Selection clears on dismissal and after the context menu closes.
-- The transparent panel stays within the active display, resizes when detail views or output lists change, and closes on Escape, outside clicks or loss of keyboard focus. Attached password sheets keep their keyboard focus. Reopening the app while its panel is visible preserves that panel; Settings remains available from its gear button.
+- The transparent panel stays within the active display, resizes when detail views or output lists change, and closes on Escape, outside clicks or application deactivation. Temporary key-window changes and attached password sheets do not dismiss the panel. Reopening the app while its panel is visible preserves that panel; Settings remains available from its gear button.
 
 ## Building
 

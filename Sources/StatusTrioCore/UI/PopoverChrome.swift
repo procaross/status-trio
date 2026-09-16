@@ -66,13 +66,42 @@ struct PopoverStatusBadge: View {
     let tint: Color
 
     var body: some View {
-        Image(systemName: symbol)
-            .font(.system(size: 17, weight: .medium))
-            .foregroundStyle(tint)
-            .environment(\.colorScheme, .light)
+        PopoverBadgeImage(symbol: symbol, tint: NSColor(tint))
             .frame(width: 40, height: 40)
-            .background(Color.white.opacity(0.92), in: Circle())
             .accessibilityHidden(true)
+    }
+}
+
+/// Original-color symbols must not inherit glass foreground vibrancy: adding
+/// vibrant green to a white badge washes the battery symbol out completely.
+private struct PopoverBadgeImage: NSViewRepresentable {
+    let symbol: String
+    let tint: NSColor
+
+    func makeNSView(context: Context) -> NonVibrantBadge { NonVibrantBadge() }
+    func updateNSView(_ view: NonVibrantBadge, context: Context) {
+        view.symbol = symbol
+        view.tint = tint
+        view.needsDisplay = true
+    }
+}
+
+private final class NonVibrantBadge: NSView {
+    var symbol = ""
+    var tint = NSColor.systemBlue
+    override var allowsVibrancy: Bool { false }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.white.withAlphaComponent(0.94).setFill()
+        NSBezierPath(ovalIn: bounds).fill()
+        let configuration = NSImage.SymbolConfiguration(pointSize: 17, weight: .medium)
+            .applying(NSImage.SymbolConfiguration(paletteColors: [tint]))
+        guard let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration) else { return }
+        image.isTemplate = false
+        let size = image.size
+        image.draw(in: NSRect(x: bounds.midX - size.width / 2, y: bounds.midY - size.height / 2,
+                              width: size.width, height: size.height))
     }
 }
 
