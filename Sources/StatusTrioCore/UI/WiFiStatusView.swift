@@ -9,8 +9,46 @@ struct WiFiStatusView: View {
     let onRequestNameAccess: () -> Void
     let onOpenWiFiSettings: () -> Void
     let onOpenLocationSettings: () -> Void
+    var isTile = false
 
-    var body: some View {
+    @ViewBuilder var body: some View {
+        if isTile {
+            Button { onOpenDetails(NSEvent.modifierFlags.contains(.option)) } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        PopoverStatusBadge(symbol: networkSymbol, tint: .blue, size: 32)
+                        Text(localization.string(.networkTitle))
+                            .font(.system(size: 13, weight: .semibold))
+                        Spacer(minLength: 0)
+                    }
+                    Spacer(minLength: 0)
+                    Text(StatusPresentation.wifiSubtitle(wifi, localization: localization))
+                        .font(.system(size: 15, weight: .semibold))
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                    HStack {
+                        Text(StatusPresentation.wifiValue(wifi, localization: localization))
+                            .font(.system(size: 11, weight: .medium))
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 104, maxHeight: 104, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(wifiAccessibilityLabel)
+            .help(subtitle)
+            .contextMenu {
+                Button(localization.string(.wifiActionOpenSettings), action: onOpenWiFiSettings)
+            }
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         HStack(spacing: 10) {
             Button {
                 switch StatusMappings.wifiSummaryAction(for: wifi) {

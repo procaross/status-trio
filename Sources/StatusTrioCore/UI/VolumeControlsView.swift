@@ -14,14 +14,14 @@ struct VolumeControlsView: View {
 
     @State private var draftVolume = 0.0
     @State private var isAdjusting = false
+    @State private var showsOutputs = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                PopoverStatusBadge(symbol: "speaker.wave.2", tint: .indigo)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(localization.string(.settingsPopupOrderVolume))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 13, weight: .semibold))
                     Text(StatusPresentation.volumeSubtitle(volume, localization: localization))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
@@ -30,13 +30,16 @@ struct VolumeControlsView: View {
                 }
                 Spacer(minLength: 4)
                 Text(percentageText)
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
                     .monospacedDigit()
-                PopoverIconButton(
-                    symbol: "ellipsis",
-                    title: localization.string(.volumeActionOpenSettings),
-                    action: onOpenSoundSettings
-                )
+                Button { showsOutputs.toggle() } label: {
+                    PopoverStatusBadge(symbol: "airplay.audio", tint: .blue, size: 30)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help(localization.string(.volumeOutputTitle))
+                .accessibilityLabel(localization.string(.volumeOutputTitle))
+                .accessibilityValue(localization.string(showsOutputs ? .volumeOutputCollapse : .volumeOutputExpand))
             }
 
             HStack(spacing: 10) {
@@ -59,9 +62,10 @@ struct VolumeControlsView: View {
                     in: 0...1,
                     onEditingChanged: handleVolumeEditing
                 )
-                .controlSize(.large)
+                .controlSize(.small)
                 .tint(volume.isMuted ? Color.secondary : (colorScheme == .dark ? Color.white : Color.accentColor))
                 .disabled(!isEnabled)
+                .frame(minHeight: 24)
                 .accessibilityLabel(localization.string(.volumeAccessibilityLabel))
                 .accessibilityValue(percentageText)
 
@@ -72,17 +76,22 @@ struct VolumeControlsView: View {
             }
             .padding(.vertical, 2)
 
-            Text(localization.string(.volumeOutputTitle))
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.secondary)
-                .padding(.top, 2)
-                .padding(.leading, 4)
+            if showsOutputs {
+                Text(localization.string(.volumeOutputTitle))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+                    .padding(.leading, 4)
 
-            OutputDeviceList(
-                settings: settings,
-                devices: volume.outputDevices,
-                onSelect: onSelectOutputDevice
-            )
+                OutputDeviceList(
+                    settings: settings,
+                    devices: volume.outputDevices,
+                    onSelect: onSelectOutputDevice
+                )
+            }
+        }
+        .contextMenu {
+            Button(localization.string(.volumeActionOpenSettings), action: onOpenSoundSettings)
         }
         .onAppear(perform: synchronizeVolume)
         .onChange(of: volume.scalar) { _, _ in

@@ -32,6 +32,38 @@ final class SettingsRowHitAreaTests: XCTestCase {
         XCTAssertGreaterThan(size.height, 0)
     }
 
+    func testBatteryTileFitsHalfWidthWithLocalizedText() {
+        let localization = makeLocalization()
+        for language in [AppLanguage.simplifiedChinese, .german, .arabic] {
+            localization.setPreference(.language(language))
+            let tile = BatteryStatusView(battery: .placeholder, onOpenBatterySettings: {}, isTile: true)
+                .modifier(PopoverSectionSurface())
+                .environmentObject(localization)
+            let controller = NSHostingController(rootView: tile)
+            let size = controller.sizeThatFits(in: NSSize(width: 154, height: 600))
+            XCTAssertEqual(size.width, 154, accuracy: 0.5)
+            XCTAssertLessThanOrEqual(size.height, 140)
+        }
+    }
+
+    func testAudioStartsCompactEvenWithManyOutputDevices() {
+        let suite = "StatusTrioCoreTests.AudioLayout.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let devices = (1...12).map {
+            AudioOutputDevice(id: UInt32($0), name: "Display \($0)", isCurrent: $0 == 1)
+        }
+        let view = VolumeControlsView(settings: SettingsStore(defaults: defaults),
+            volume: VolumeStatus(scalar: 0.5, isMuted: false, deviceName: "Display 1", outputDevices: devices),
+            isEnabled: true, onVolumeChange: { _ in }, onToggleMute: {},
+            onSelectOutputDevice: { _ in }, onOpenSoundSettings: {})
+            .environmentObject(makeLocalization())
+        let controller = NSHostingController(rootView: view)
+        let size = controller.sizeThatFits(in: NSSize(width: 292, height: 1000))
+        XCTAssertLessThanOrEqual(size.height, 100)
+        XCTAssertGreaterThan(size.height, 40)
+    }
+
     private func makeLocalization() -> Localization {
         let suiteName = "StatusTrioCoreTests.SettingsHitArea.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

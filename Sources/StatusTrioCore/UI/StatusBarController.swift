@@ -270,7 +270,7 @@ final class StatusBarController: NSObject {
         // The presenter supplies a clear window on macOS 26+, allowing each
         // glass surface to sample the desktop without an opaque popover shell.
         let hostingController = NSHostingController(rootView: rootView
-            .preferredColorScheme(StatusPopupPresenter.usesGlassPanel ? .dark : nil))
+            .preferredColorScheme(StatusPopupPresenter.usesGlassPanel ? .light : nil))
         hostingController.sizingOptions = [.preferredContentSize]
         popover.contentViewController = hostingController
     }
@@ -281,7 +281,7 @@ final class StatusBarController: NSObject {
     func showPopover() {
         guard !popover.isShown else { return }
         if isStatusItemVisible, let button = statusItem.button {
-            presentPopover(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            presentPopover(relativeTo: button.bounds, of: button, preferredEdge: .minY, isPreview: true)
         } else if let screen = NSScreen.main ?? NSScreen.screens.first {
             // Dock-only mode has no status item to anchor to, and settings has
             // already closed. Use the existing invisible anchor on this screen.
@@ -290,7 +290,8 @@ final class StatusBarController: NSObject {
             presentPopover(
                 relativeTo: anchor.view.bounds,
                 of: anchor.view,
-                preferredEdge: anchor.preferredEdge
+                preferredEdge: anchor.preferredEdge,
+                isPreview: true
             )
         }
     }
@@ -328,8 +329,10 @@ final class StatusBarController: NSObject {
     private func presentPopover(
         relativeTo rect: NSRect,
         of view: NSView,
-        preferredEdge: NSRectEdge
+        preferredEdge: NSRectEdge,
+        isPreview: Bool = false
     ) {
+        popover.dismissesOnDeactivate = !isPreview
         cancelPopoverContentRelease()
         popoverContentRetention.markOpened()
         store.setPopoverVisible(true)
@@ -342,7 +345,13 @@ final class StatusBarController: NSObject {
         popover.show(relativeTo: rect, of: view, preferredEdge: preferredEdge)
         setStatusItemSelected(popover.isShown)
         popover.contentViewController?.view.window?.makeKey()
-        installPopoverDismissMonitor()
+        if isPreview {
+            // Settings preview stays available for inspection; Escape or its
+            // Settings button closes it. Normal menu-bar panels remain transient.
+            removePopoverDismissMonitor()
+        } else {
+            installPopoverDismissMonitor()
+        }
         installVolumeScrollMonitor()
     }
 

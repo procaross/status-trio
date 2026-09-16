@@ -4,14 +4,14 @@ This fork preserves Status Trio's original license and attribution. It changes t
 
 ## Design
 
-- On macOS 26+, use a transparent AppKit panel with SwiftUI Liquid Glass surfaces. This lets glass sample the desktop instead of an opaque popover shell. A shared GlassEffectContainer batches rendering without merging separate cards. Older systems and Swift 6.1 builds retain NSPopover and system material backgrounds.
-- Group battery, network, and audio in rounded glass surfaces with a subtle edge highlight, white circular badges, and the system regular glass material for adaptive contrast with light content. The panel follows the control-center visual treatment without changing system appearance.
-- Use native sliders and switches. Output devices use a compact selected row with a checkmark; long names truncate in the middle and retain a full tooltip and accessibility label.
-- Keep critical numbers distinct from secondary status text. Follow the selected app locale for numeric formatting.
-- Settings → panel → Preview panel opens the actual live popup. This closes the settings window first, so the preview uses the same activation and dismissal behavior as a menu-bar click.
-- Respect Reduce Transparency with opaque system backgrounds. Do not add continuous animations, custom rendering loops, private material APIs, or extra monitoring timers.
+- On macOS 26+, use a transparent AppKit panel, a light frosted outer background, and clear SwiftUI Liquid Glass cards. A fine specular rim defines each card; the outer window no longer forces a dark appearance. Glass surfaces are applied individually so their rim overlays remain visible. Older systems and Swift 6.1 builds retain NSPopover and system material backgrounds.
+- Pair adjacent battery and network summaries into compact tiles while preserving configured section order and visibility. Audio and Bluetooth remain full width. Keep the header outside the cards, with small settings and quit controls.
+- Use native sliders and switches. Audio starts compact; its output button reveals or collapses the device list and resizes the panel. Sound settings are available in the audio card's context menu. Output devices retain their selected checkmark, full tooltip, and accessibility label.
+- Keep critical numbers distinct from secondary status text. Follow the selected app locale for numeric formatting. Network tiles open details; location access remains an explicit action where available.
+- Settings → panel → Preview panel opens the actual live popup after closing settings. This preview stays open for inspection until Escape or the settings button is used. Normal menu-bar popups remain transient and close on outside clicks or application deactivation.
+- Respect Reduce Transparency with opaque system backgrounds and adaptive foreground colors. Do not add continuous animations, custom rendering loops, private material APIs, or extra monitoring timers.
 - Keep the native menu-bar button and accessibility actions, using a compact slot and a circular selection even for wide icon configurations. Selection clears on dismissal and after the context menu closes.
-- The transparent panel stays within the active display, resizes when detail views or output lists change, and closes on Escape, outside clicks or application deactivation. Temporary key-window changes and attached password sheets do not dismiss the panel. Reopening the app while its panel is visible preserves that panel; Settings remains available from its gear button.
+- The transparent panel stays within the active display and resizes when detail views or output lists change. Temporary key-window changes and attached password sheets do not dismiss it. Reopening the app while its panel is visible preserves that panel; Settings remains available from its gear button.
 
 ## Building
 
