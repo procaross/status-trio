@@ -13,7 +13,7 @@ private struct StatusBarAccessibilityKey: Equatable {
 }
 
 @MainActor
-final class StatusBarController: NSObject, NSPopoverDelegate {
+final class StatusBarController: NSObject {
     static let iconSnapshotDebounceInterval: TimeInterval = 0.5
     static let popoverToggleLockoutInterval: TimeInterval = 0.25
     static let popoverContentReleaseDelay: TimeInterval = 60
@@ -24,7 +24,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     private let statusItem: NSStatusItem
-    private let popover = NSPopover()
+    private let popover = StatusPopupPresenter()
     private let store: SystemStatusStore
     private let settings: SettingsStore
     private let localization: Localization
@@ -208,6 +208,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
     private func configureButton() {
         guard let button = statusItem.button else { return }
+        button.cell = CompactStatusItemCell(textCell: "")
         button.imagePosition = .imageOnly
         button.target = self
         button.action = #selector(handleClick(_:))
@@ -246,8 +247,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     private func configurePopover() {
-        popover.behavior = .transient
-        popover.delegate = self
+        popover.onClose = { [weak self] in self?.popoverDidClose() }
     }
 
     private func installPopoverContentIfNeeded() {
@@ -267,12 +267,15 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
                 quit: quitAction
             )
         }
-        // Keep the hosting surface transparent. NSPopover supplies native Liquid
-        // Glass on macOS 26+; an extra material here would flatten it into gray.
-        let hostingController = NSHostingController(rootView: rootView)
+        // The presenter supplies a clear window on macOS 26+, allowing each
+        // glass surface to sample the desktop without an opaque popover shell.
+        let hostingController = NSHostingController(rootView: rootView
+            .preferredColorScheme(StatusPopupPresenter.usesGlassPanel ? .dark : nil))
         hostingController.sizingOptions = [.preferredContentSize]
         popover.contentViewController = hostingController
     }
+
+    var isPopoverShown: Bool { popover.isShown }
 
     /// The settings preview uses the same live popover as the menu bar.
     func showPopover() {
@@ -337,6 +340,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         // modern activate() can be ignored by the user-activation policy.
         NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: rect, of: view, preferredEdge: preferredEdge)
+        setStatusItemSelected(popover.isShown)
         popover.contentViewController?.view.window?.makeKey()
         installPopoverDismissMonitor()
         installVolumeScrollMonitor()
@@ -472,7 +476,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         volumeScrollSession.reset()
     }
 
-    func popoverDidClose(_ notification: Notification) {
+    private func popoverDidClose() {
+        setStatusItemSelected(false)
         removePopoverDismissMonitor()
         removeVolumeScrollMonitor()
         store.setPopoverVisible(false)
@@ -535,6 +540,9 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         )
         guard renderCache.shouldRender(key) else { return }
 
+        statusItem.length = CompactStatusItemCell.slotWidth(
+            iconSize: iconSize, barHeight: NSStatusBar.system.thickness
+        )
         button.image = StatusIconRenderer.image(
             menuBarStatus: status,
             size: iconSize,
@@ -652,6 +660,12 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         }
     }
 
+    private func setStatusItemSelected(_ selected: Bool) {
+        guard let button = statusItem.button, let cell = button.cell as? CompactStatusItemCell else { return }
+        cell.isPanelVisible = selected
+        button.needsDisplay = true
+    }
+
     private func showMenu() {
         let menu = StatusMenuBuilder.makeMenu(
             version: Self.appVersion,
@@ -663,6 +677,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
                 ? #selector(handleCheckForUpdates) : nil
         )
         guard let button = statusItem.button else { return }
+        setStatusItemSelected(true)
+        defer { setStatusItemSelected(false) }
         menu.popUp(
             positioning: nil,
             at: NSPoint(x: 0, y: button.bounds.maxY + 4),

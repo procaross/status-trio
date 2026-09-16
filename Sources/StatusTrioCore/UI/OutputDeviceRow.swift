@@ -6,6 +6,7 @@ struct OutputDeviceRow: View {
     let device: AudioOutputDevice
     let onSelect: (AudioOutputDevice) -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
 
     var body: some View {
@@ -15,7 +16,7 @@ struct OutputDeviceRow: View {
             HStack(spacing: 10) {
                 Image(systemName: deviceSymbolName)
                     .font(.system(size: 15, weight: .regular))
-                    .foregroundStyle(device.isCurrent ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(device.isCurrent ? selectionColor : Color.secondary)
                     .frame(width: 24, height: 24)
                     .accessibilityHidden(true)
 
@@ -28,7 +29,7 @@ struct OutputDeviceRow: View {
                 if device.isCurrent {
                     Image(systemName: "checkmark")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(selectionColor)
                         .accessibilityHidden(true)
                 }
             }
@@ -36,7 +37,7 @@ struct OutputDeviceRow: View {
             .padding(.vertical, 6)
             .background {
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(device.isCurrent ? Color.accentColor.opacity(0.10) : Color.primary.opacity(isHovered ? 0.055 : 0))
+                    .fill(device.isCurrent ? selectionColor.opacity(0.12) : Color.primary.opacity(isHovered ? 0.055 : 0))
             }
             .contentShape(RoundedRectangle(cornerRadius: 11))
         }
@@ -46,6 +47,8 @@ struct OutputDeviceRow: View {
         .accessibilityLabel(displayName)
         .accessibilityValue(device.isCurrent ? localization.string(.volumeOutputCurrent) : "")
     }
+
+    private var selectionColor: Color { colorScheme == .dark ? .white : .accentColor }
 
     private var displayName: String {
         device.name ?? localization.string(.volumeOutputUnknownDevice)

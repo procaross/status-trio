@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct VolumeControlsView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var localization: Localization
     @ObservedObject var settings: SettingsStore
     let volume: VolumeStatus
@@ -59,7 +60,7 @@ struct VolumeControlsView: View {
                     onEditingChanged: handleVolumeEditing
                 )
                 .controlSize(.large)
-                .tint(volume.isMuted ? Color.secondary : Color.accentColor)
+                .tint(volume.isMuted ? Color.secondary : (colorScheme == .dark ? Color.white : Color.accentColor))
                 .disabled(!isEnabled)
                 .accessibilityLabel(localization.string(.volumeAccessibilityLabel))
                 .accessibilityValue(percentageText)
