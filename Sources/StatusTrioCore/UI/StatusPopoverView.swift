@@ -295,22 +295,33 @@ struct StatusPopoverView: View {
                 .modifier(PopoverSectionSurface())
             }
         }
-        .padding(14)
-        .frame(width: 348)
+        .padding(22)
+        .frame(width: 364)
         .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(reduceTransparency ? AnyShapeStyle(Color(nsColor: .windowBackgroundColor)) : AnyShapeStyle(.ultraThinMaterial))
+            if reduceTransparency {
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    .fill(Color(nsColor: .windowBackgroundColor))
+            } else {
+                PopoverBackdrop()
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
         }
     }
 
     private var summary: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             ForEach(PopupSummaryLayout.rows(settings.visiblePopupSections)) { row in
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(row.sections) { section in
-                        popupSection(section, isTile: row.sections.count == 2)
-                            .frame(maxWidth: .infinity)
-                            .modifier(PopoverSectionSurface())
+                        if row.sections.count == 2 {
+                            popupSection(section, isTile: true)
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            popupSection(section, isTile: false)
+                                .frame(maxWidth: .infinity)
+                                .modifier(PopoverSectionSurface())
+                        }
                     }
                 }
             }

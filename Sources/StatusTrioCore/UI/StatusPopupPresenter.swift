@@ -14,6 +14,7 @@ final class StatusPopupPresenter: NSObject, NSPopoverDelegate {
     private var edge: NSRectEdge = .minY
     var onClose: (() -> Void)?
     var dismissesOnDeactivate = true
+    var keepOpenOnDeactivation: (() -> Bool)?
 
     var contentViewController: NSViewController? {
         didSet {
@@ -40,11 +41,12 @@ final class StatusPopupPresenter: NSObject, NSPopoverDelegate {
         legacy.delegate = self
         deactivationObservation = NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
             .sink { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    // A temporary key-window change inside this app (sheets or
-                    // accessibility activation) is not an outside dismissal.
-                    guard !NSApp.isActive, self?.dismissesOnDeactivate == true else { return }
-                    self?.performClose(nil)
+                // AppKit posts this on the main thread. Capture the mouse-down
+                // state now, before the status button's mouse-up toggles the panel.
+                MainActor.assumeIsolated {
+                    guard let self, !NSApp.isActive, self.dismissesOnDeactivate,
+                          self.keepOpenOnDeactivation?() != true else { return }
+                    self.performClose(nil)
                 }
             }
     }

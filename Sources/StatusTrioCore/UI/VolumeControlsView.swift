@@ -36,7 +36,7 @@ struct VolumeControlsView: View {
                         .frame(width: 24, height: 28)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PopoverControlButtonStyle())
                 .disabled(!isEnabled)
                 .help(localization.string(volume.isMuted ? .volumeUnmuted : .volumeMuted))
                 .accessibilityLabel(localization.string(volume.isMuted ? .volumeUnmuted : .volumeMuted))
@@ -64,7 +64,7 @@ struct VolumeControlsView: View {
                     PopoverStatusBadge(symbol: "airplay.audio", tint: .blue, size: 28)
                         .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PopoverControlButtonStyle())
                 .help(StatusPresentation.volumeSubtitle(volume, localization: localization))
                 .accessibilityLabel(localization.string(.volumeOutputTitle))
                 .accessibilityValue(localization.string(showsOutputs ? .volumeOutputCollapse : .volumeOutputExpand))

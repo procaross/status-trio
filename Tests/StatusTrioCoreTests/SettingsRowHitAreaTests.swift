@@ -37,7 +37,6 @@ final class SettingsRowHitAreaTests: XCTestCase {
         for language in [AppLanguage.simplifiedChinese, .german, .arabic] {
             localization.setPreference(.language(language))
             let tile = BatteryStatusView(battery: .placeholder, onOpenBatterySettings: {}, isTile: true)
-                .modifier(PopoverSectionSurface())
                 .environmentObject(localization)
             let controller = NSHostingController(rootView: tile)
             let size = controller.sizeThatFits(in: NSSize(width: 154, height: 600))
