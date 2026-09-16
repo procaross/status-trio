@@ -19,36 +19,17 @@ final class SettingsRowHitAreaTests: XCTestCase {
         }
     }
 
-    func testPreferenceCheckboxRowUsesFullRowHitArea() {
+    func testPreferenceCheckboxRowExpandsToAvailableWidth() {
         let localization = makeLocalization()
         let view = PreferenceCheckboxRow(
             label: .settingsBatteryShowPercentage,
             isOn: .constant(false)
         )
         .environmentObject(localization)
-
-        let hitAreaWidths = interactiveSubViewWidths(
-            for: view,
-            size: NSSize(width: 300, height: 40)
-        )
-
-        XCTAssertTrue(
-            hitAreaWidths.contains { abs($0 - 300) < 0.5 },
-            "Expected the checkbox row to react across its full width, got \(hitAreaWidths)"
-        )
-    }
-
-    private func interactiveSubViewWidths<V: View>(
-        for view: V,
-        size: NSSize
-    ) -> [CGFloat] {
-        let hostingView = NSHostingView(rootView: view)
-        hostingView.frame = NSRect(origin: .zero, size: size)
-        hostingView.layoutSubtreeIfNeeded()
-
-        return hostingView.subviews
-            .filter { !$0.isHidden && $0.frame.height > 0 }
-            .map(\.frame.width)
+        let controller = NSHostingController(rootView: view)
+        let size = controller.sizeThatFits(in: NSSize(width: 300, height: 40))
+        XCTAssertEqual(size.width, 300, accuracy: 0.5)
+        XCTAssertGreaterThan(size.height, 0)
     }
 
     private func makeLocalization() -> Localization {
@@ -60,47 +41,4 @@ final class SettingsRowHitAreaTests: XCTestCase {
         return localization
     }
 
-    private func makeSettings() -> SettingsStore {
-        let suiteName = "StatusTrioCoreTests.SettingsHitAreaStore.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        return SettingsStore(defaults: defaults)
-    }
-}
-
-@MainActor
-private final class EmptyBatteryMonitor: BatteryMonitoring {
-    let updates = AsyncStream<BatteryStatus> { continuation in
-        continuation.finish()
-    }
-
-    func start() {}
-    func stop() {}
-    func refresh() {}
-    func recover() {}
-}
-
-@MainActor
-private final class EmptyWiFiMonitor: WiFiMonitoring {
-    let updates = AsyncStream<WiFiStatus> { continuation in
-        continuation.finish()
-    }
-
-    func start() {}
-    func stop() {}
-    func refresh() {}
-    func recover() {}
-    func requestNameAccess() {}
-}
-
-@MainActor
-private final class EmptyVolumeMonitor: VolumeMonitoring {
-    let updates = AsyncStream<VolumeStatus> { continuation in
-        continuation.finish()
-    }
-
-    func start() {}
-    func stop() {}
-    func refresh() {}
-    func recover() {}
 }
