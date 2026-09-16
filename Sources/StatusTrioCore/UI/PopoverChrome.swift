@@ -25,7 +25,7 @@ struct PopoverGlassSurface: ViewModifier {
         } else {
 #if compiler(>=6.2)
             if #available(macOS 26.0, *) {
-                content.glassEffect(.clear.tint(.black.opacity(0.22)), in: shape)
+                content.glassEffect(.regular, in: shape)
                     .overlay {
                         shape.strokeBorder(
                             LinearGradient(colors: [.white.opacity(0.85), .white.opacity(0.12), .white.opacity(0.55)],

@@ -5,7 +5,7 @@ This fork preserves Status Trio's original license and attribution. It changes t
 ## Design
 
 - On macOS 26+, use a transparent AppKit panel with SwiftUI Liquid Glass surfaces. This lets glass sample the desktop instead of an opaque popover shell. A shared GlassEffectContainer batches rendering without merging separate cards. Older systems and Swift 6.1 builds retain NSPopover and system material backgrounds.
-- Group battery, network, and audio in rounded glass surfaces with a subtle edge highlight, white circular badges, and a restrained dark tint for legible light content. The panel follows the control-center visual treatment without changing system appearance.
+- Group battery, network, and audio in rounded glass surfaces with a subtle edge highlight, white circular badges, and the system regular glass material for adaptive contrast with light content. The panel follows the control-center visual treatment without changing system appearance.
 - Use native sliders and switches. Output devices use a compact selected row with a checkmark; long names truncate in the middle and retain a full tooltip and accessibility label.
 - Keep critical numbers distinct from secondary status text. Follow the selected app locale for numeric formatting.
 - Settings → panel → Preview panel opens the actual live popup. This closes the settings window first, so the preview uses the same activation and dismissal behavior as a menu-bar click.
