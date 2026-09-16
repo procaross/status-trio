@@ -16,6 +16,7 @@ struct PopoverSectionSurface: ViewModifier {
 struct PopoverGlassSurface: ViewModifier {
     let reduceTransparency: Bool
     var radius: CGFloat = 32
+    var highlight: Double = 0
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: radius, style: .continuous) }
 
     @ViewBuilder
@@ -29,7 +30,7 @@ struct PopoverGlassSurface: ViewModifier {
                     .foregroundStyle(.white)
                     .environment(\.colorScheme, .dark)
                     .background {
-                        NativePopoverGlass(radius: radius)
+                        NativePopoverGlass(radius: radius, highlight: highlight)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
@@ -47,6 +48,7 @@ struct PopoverGlassSurface: ViewModifier {
 @available(macOS 26.0, *)
 private struct NativePopoverGlass: NSViewRepresentable {
     let radius: CGFloat
+    let highlight: Double
 
     func makeNSView(context: Context) -> NSGlassEffectView {
         let view = NSGlassEffectView()
@@ -61,6 +63,7 @@ private struct NativePopoverGlass: NSViewRepresentable {
 
     func updateNSView(_ view: NSGlassEffectView, context: Context) {
         view.cornerRadius = radius
+        view.tintColor = NSColor.black.withAlphaComponent(0.30 - highlight * 0.07)
     }
 }
 #endif
@@ -133,8 +136,47 @@ struct PopoverQuietButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(isEnabled ? Color.secondary : Color.secondary.opacity(0.45))
-            .background(Color.primary.opacity(configuration.isPressed ? 0.10 : 0.035), in: Circle())
+        PopoverFeedbackBody(isPressed: configuration.isPressed, hasSurface: false) {
+            configuration.label
+                .foregroundStyle(isEnabled ? Color.secondary : Color.secondary.opacity(0.45))
+                .background(Color.primary.opacity(configuration.isPressed ? 0.10 : 0.035), in: Circle())
+        }
+    }
+}
+
+/// Press feedback lasts for the entire hold; releasing invokes the native Button
+/// once. No repeating timers or extra long-press action compete with the click.
+struct PopoverControlButtonStyle: ButtonStyle {
+    var hasSurface = false
+    func makeBody(configuration: Configuration) -> some View {
+        PopoverFeedbackBody(isPressed: configuration.isPressed, hasSurface: hasSurface) {
+            configuration.label
+        }
+    }
+}
+
+private struct PopoverFeedbackBody<Content: View>: View {
+    let isPressed: Bool
+    let hasSurface: Bool
+    @ViewBuilder let content: () -> Content
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @State private var isHovered = false
+
+    private var highlight: Double { !isEnabled ? 0 : (isPressed ? 1 : (isHovered ? 0.55 : 0)) }
+    var body: some View {
+        Group {
+            if hasSurface {
+                content().padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                    .modifier(PopoverGlassSurface(reduceTransparency: reduceTransparency, highlight: highlight))
+            } else {
+                content().brightness(highlight * 0.08)
+            }
+        }
+        .scaleEffect(!isEnabled || reduceMotion ? 1 : (isPressed ? 0.96 : (isHovered ? 1.015 : 1)))
+        .animation(reduceMotion ? nil : .spring(response: 0.24, dampingFraction: 0.8), value: isPressed)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isHovered)
+        .onHover { isHovered = $0 }
     }
 }

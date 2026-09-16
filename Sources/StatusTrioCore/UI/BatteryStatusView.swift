@@ -26,7 +26,7 @@ struct BatteryStatusView: View {
                 .frame(maxWidth: .infinity, minHeight: 40, maxHeight: 40, alignment: .leading)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PopoverControlButtonStyle(hasSurface: true))
             .help(StatusPresentation.batterySubtitle(battery, localization: localization) + " · " + localization.string(.batteryActionOpenSettings))
             .accessibilityLabel(battery.isPresent ? StatusPresentation.batteryTitle(battery, localization: localization) : localization.string(.batteryStateNotPresent))
         } else {
@@ -87,6 +87,6 @@ struct BatteryStatusView: View {
         if battery.percentage <= 20 {
             return .red
         }
-        return .primary
+        return Color(nsColor: .darkGray)
     }
 }

@@ -42,6 +42,7 @@ final class StatusBarController: NSObject {
     private var isStatusItemVisible: Bool
     private var accessibilityKey: StatusBarAccessibilityKey?
     private var popoverDismissMonitor: Any?
+    private var statusItemClickGate = StatusItemClickGate()
     private var volumeScrollMonitor: Any?
     private let volumeScrollAdjustment = PopupVolumeScrollAdjustment()
     private var volumeScrollSession = PopupVolumeScrollSession()
@@ -213,6 +214,9 @@ final class StatusBarController: NSObject {
         button.target = self
         button.action = #selector(handleClick(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        let hover = StatusItemHoverView(frame: button.bounds)
+        hover.autoresizingMask = [.width, .height]
+        button.addSubview(hover)
     }
 
     private func observeAppearanceChanges() {
@@ -239,6 +243,7 @@ final class StatusBarController: NSObject {
 
         switch click {
         case .left:
+            guard statusItemClickGate.accept(eventNumber: event.eventNumber, timestamp: event.timestamp) else { return }
             togglePopover()
         case .right:
             popover.performClose(nil)
@@ -248,6 +253,12 @@ final class StatusBarController: NSObject {
 
     private func configurePopover() {
         popover.onClose = { [weak self] in self?.popoverDidClose() }
+        popover.keepOpenOnDeactivation = { [weak self] in
+            PopupDismissalPolicy.keepOpenOnDeactivation(
+                point: NSEvent.mouseLocation, pressedButtons: NSEvent.pressedMouseButtons,
+                anchor: self?.statusButtonScreenFrame
+            )
+        }
     }
 
     private func installPopoverContentIfNeeded() {
@@ -297,7 +308,6 @@ final class StatusBarController: NSObject {
     }
 
     private func togglePopover() {
-        guard popoverToggleGate.shouldAccept(at: Date()) else { return }
         guard let button = statusItem.button else { return }
         if popover.isShown {
             popover.performClose(nil)
@@ -397,13 +407,26 @@ final class StatusBarController: NSObject {
         )
     }
 
+    private var statusButtonScreenFrame: NSRect? {
+        guard let button = statusItem.button, let window = button.window else { return nil }
+        return window.convertToScreen(button.convert(button.bounds, to: nil))
+    }
+
     private func installPopoverDismissMonitor() {
         removePopoverDismissMonitor()
         popoverDismissMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown]
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.popover.performClose(nil)
+            // AppKit invokes event monitors on the main thread. Decide while
+            // handling this event; a queued close can otherwise close a new popup.
+            MainActor.assumeIsolated {
+                guard let self,
+                      PopupDismissalPolicy.shouldDismissOutsideClick(
+                        point: NSEvent.mouseLocation,
+                        anchor: self.statusButtonScreenFrame,
+                        panel: self.popover.contentViewController?.view.window?.frame
+                      ) else { return }
+                self.popover.performClose(nil)
             }
         }
     }
@@ -540,12 +563,13 @@ final class StatusBarController: NSObject {
     ) {
         guard isStatusItemVisible, let button = statusItem.button else { return }
 
+        let displaySize = CompactStatusItemCell.displaySize(requested: iconSize, barHeight: NSStatusBar.system.thickness)
         let key = StatusBarRenderKey(
             status: status,
             iconSize: iconSize,
             options: options,
             connectionOptions: connectionOptions,
-            appearanceName: button.effectiveAppearance.name.rawValue
+            appearanceName: "\(button.effectiveAppearance.name.rawValue):\(NSStatusBar.system.thickness)"
         )
         guard renderCache.shouldRender(key) else { return }
 
@@ -554,7 +578,7 @@ final class StatusBarController: NSObject {
         )
         button.image = StatusIconRenderer.image(
             menuBarStatus: status,
-            size: iconSize,
+            size: displaySize,
             options: options,
             connectionOptions: connectionOptions
         )

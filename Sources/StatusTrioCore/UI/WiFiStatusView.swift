@@ -31,7 +31,7 @@ struct WiFiStatusView: View {
                 .frame(maxWidth: .infinity, minHeight: 40, maxHeight: 40, alignment: .leading)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PopoverControlButtonStyle(hasSurface: true))
             .accessibilityLabel(wifiAccessibilityLabel)
             .help(subtitle)
             .contextMenu {
