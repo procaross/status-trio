@@ -297,48 +297,59 @@ struct StatusPopoverView: View {
         }
         .padding(14)
         .frame(width: 348)
+        .background {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(reduceTransparency ? AnyShapeStyle(Color(nsColor: .windowBackgroundColor)) : AnyShapeStyle(.ultraThinMaterial))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(.white.opacity(0.6), lineWidth: 0.6)
+                .allowsHitTesting(false)
+        }
     }
 
     private var summary: some View {
-        PopoverGlassGroup {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text("Status Trio")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    PopoverIconButton(
-                        symbol: "gearshape",
-                        title: localization.string(.menuSettings),
-                        action: openSettings
-                    )
-                    .keyboardShortcut(",", modifiers: .command)
-                    PopoverIconButton(
-                        symbol: "power",
-                        title: localization.string(.menuQuit),
-                        action: quit
-                    )
-                    .keyboardShortcut("q", modifiers: .command)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .modifier(PopoverGlassSurface(reduceTransparency: reduceTransparency, radius: 22))
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Status Trio")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                PopoverIconButton(
+                    symbol: "gearshape",
+                    title: localization.string(.menuSettings),
+                    action: openSettings
+                )
+                .keyboardShortcut(",", modifiers: .command)
+                PopoverIconButton(
+                    symbol: "power",
+                    title: localization.string(.menuQuit),
+                    action: quit
+                )
+                .keyboardShortcut("q", modifiers: .command)
+            }
+            .padding(.horizontal, 4)
 
-                ForEach(settings.visiblePopupSections) { section in
-                    popupSection(section)
-                        .modifier(PopoverSectionSurface())
+            ForEach(PopupSummaryLayout.rows(settings.visiblePopupSections)) { row in
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(row.sections) { section in
+                        popupSection(section, isTile: row.sections.count == 2)
+                            .frame(maxWidth: .infinity)
+                            .modifier(PopoverSectionSurface())
+                    }
                 }
             }
         }
     }
 
     @ViewBuilder
-    private func popupSection(_ section: PopupSection) -> some View {
+    private func popupSection(_ section: PopupSection, isTile: Bool) -> some View {
         switch section {
         case .battery:
             BatteryStatusView(
                 battery: store.popupSnapshot.battery,
-                onOpenBatterySettings: openBatterySettings
+                onOpenBatterySettings: openBatterySettings,
+                isTile: isTile
             )
         case .network:
             WiFiStatusView(
@@ -349,7 +360,8 @@ struct StatusPopoverView: View {
                 },
                 onRequestNameAccess: requestWiFiNameAccess,
                 onOpenWiFiSettings: openWiFiSettings,
-                onOpenLocationSettings: openLocationSettings
+                onOpenLocationSettings: openLocationSettings,
+                isTile: isTile
             )
         case .bluetooth:
             BluetoothStatusView(

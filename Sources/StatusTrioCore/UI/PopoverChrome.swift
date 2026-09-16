@@ -1,13 +1,13 @@
 import SwiftUI
 
 // Modified in the procaross/status-trio UI fork.
-/// System glass provides the refraction and edge lighting; no painted imitation.
+/// Clear system glass supplies refraction; a restrained rim defines the edge.
 struct PopoverSectionSurface: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
         content
-            .padding(16)
+            .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(PopoverGlassSurface(reduceTransparency: reduceTransparency))
     }
@@ -25,15 +25,26 @@ struct PopoverGlassSurface: ViewModifier {
         } else {
 #if compiler(>=6.2)
             if #available(macOS 26.0, *) {
-                content.glassEffect(.regular, in: shape)
+                content
+                    .foregroundStyle(.white)
+                    .environment(\.colorScheme, .dark)
+                    .background(Color.black.opacity(0.20), in: shape)
+                    .glassEffect(.clear, in: shape)
                     .overlay {
-                        shape.strokeBorder(
-                            LinearGradient(colors: [.white.opacity(0.85), .white.opacity(0.12), .white.opacity(0.55)],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.75
-                        )
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
+                        shape.strokeBorder(.black.opacity(0.18), lineWidth: 0.6)
+                            .overlay {
+                                shape.inset(by: 0.7).strokeBorder(
+                                    LinearGradient(colors: [.white, .white.opacity(0.28), .white.opacity(0.95)],
+                                                   startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1.1
+                                )
+                            }
+                            .overlay {
+                                shape.inset(by: 2).strokeBorder(.white.opacity(0.16), lineWidth: 0.6)
+                            }
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
                     }
+                    .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
             } else {
                 content.background(.ultraThinMaterial, in: shape)
             }
@@ -44,30 +55,15 @@ struct PopoverGlassSurface: ViewModifier {
     }
 }
 
-struct PopoverGlassGroup<Content: View>: View {
-    @ViewBuilder let content: () -> Content
-
-    @ViewBuilder var body: some View {
-#if compiler(>=6.2)
-        if #available(macOS 26.0, *) {
-            // Below the section gap, so adjacent surfaces never merge together.
-            GlassEffectContainer(spacing: 6, content: content)
-        } else {
-            content()
-        }
-#else
-        content()
-#endif
-    }
-}
 
 struct PopoverStatusBadge: View {
     let symbol: String
     let tint: Color
+    var size: CGFloat = 36
 
     var body: some View {
         PopoverBadgeImage(symbol: symbol, tint: NSColor(tint))
-            .frame(width: 40, height: 40)
+            .frame(width: size, height: size)
             .accessibilityHidden(true)
     }
 }

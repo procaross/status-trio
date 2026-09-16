@@ -13,6 +13,7 @@ final class StatusPopupPresenter: NSObject, NSPopoverDelegate {
     private var availableFrame = NSRect.zero
     private var edge: NSRectEdge = .minY
     var onClose: (() -> Void)?
+    var dismissesOnDeactivate = true
 
     var contentViewController: NSViewController? {
         didSet {
@@ -42,7 +43,7 @@ final class StatusPopupPresenter: NSObject, NSPopoverDelegate {
                 Task { @MainActor [weak self] in
                     // A temporary key-window change inside this app (sheets or
                     // accessibility activation) is not an outside dismissal.
-                    guard !NSApp.isActive else { return }
+                    guard !NSApp.isActive, self?.dismissesOnDeactivate == true else { return }
                     self?.performClose(nil)
                 }
             }
@@ -67,7 +68,7 @@ final class StatusPopupPresenter: NSObject, NSPopoverDelegate {
             let newPanel = GlassPanel(contentRect: .zero, styleMask: [.borderless], backing: .buffered, defer: false)
             newPanel.isOpaque = false
             newPanel.backgroundColor = .clear
-            newPanel.appearance = NSAppearance(named: .darkAqua)
+            newPanel.appearance = NSAppearance(named: .aqua)
             newPanel.hasShadow = false // Each glass surface casts its own shadow.
             newPanel.isReleasedWhenClosed = false
             newPanel.isExcludedFromWindowsMenu = true
