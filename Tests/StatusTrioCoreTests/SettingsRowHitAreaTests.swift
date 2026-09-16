@@ -6,17 +6,17 @@ import XCTest
 
 @MainActor
 final class SettingsRowHitAreaTests: XCTestCase {
-    func testPopupToolbarActionsHaveComfortableHitAreas() {
-        let view = HStack {
-            PopoverIconButton(symbol: "gearshape", title: "Settings", action: {})
-            PopoverIconButton(symbol: "power", title: "Quit", action: {})
+    func testPopupToolbarControlsKeepUsableSizeWithLongLocalizedLabels() {
+        // Measure the public layout contract, not SwiftUI's private subview tree.
+        // The toolbar must retain its hit area even with a long accessibility label.
+        for title in ["设置…", "Einstellungen öffnen…", "فتح الإعدادات"] {
+            let view = PopoverIconButton(symbol: "gearshape", title: title, action: {})
+            let hostingView = NSHostingView(rootView: view)
+            hostingView.layoutSubtreeIfNeeded()
+            XCTAssertGreaterThanOrEqual(hostingView.fittingSize.width, 28)
+            XCTAssertGreaterThanOrEqual(hostingView.fittingSize.height, 28)
+            XCTAssertLessThanOrEqual(hostingView.fittingSize.width, 44)
         }
-        let hitAreaWidths = interactiveSubViewWidths(
-            for: view,
-            size: NSSize(width: 64, height: 28)
-        )
-        XCTAssertEqual(hitAreaWidths.count, 2)
-        XCTAssertTrue(hitAreaWidths.allSatisfy { $0 >= 28 })
     }
 
     func testPreferenceCheckboxRowUsesFullRowHitArea() {
