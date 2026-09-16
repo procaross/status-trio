@@ -301,18 +301,22 @@ struct StatusPopoverView: View {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(reduceTransparency ? AnyShapeStyle(Color(nsColor: .windowBackgroundColor)) : AnyShapeStyle(.ultraThinMaterial))
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(.white.opacity(0.6), lineWidth: 0.6)
-                .allowsHitTesting(false)
-        }
     }
 
     private var summary: some View {
         VStack(alignment: .leading, spacing: 12) {
+            ForEach(PopupSummaryLayout.rows(settings.visiblePopupSections)) { row in
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(row.sections) { section in
+                        popupSection(section, isTile: row.sections.count == 2)
+                            .frame(maxWidth: .infinity)
+                            .modifier(PopoverSectionSurface())
+                    }
+                }
+            }
             HStack {
                 Text("Status Trio")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
                 Spacer()
                 PopoverIconButton(
@@ -329,16 +333,6 @@ struct StatusPopoverView: View {
                 .keyboardShortcut("q", modifiers: .command)
             }
             .padding(.horizontal, 4)
-
-            ForEach(PopupSummaryLayout.rows(settings.visiblePopupSections)) { row in
-                HStack(alignment: .top, spacing: 12) {
-                    ForEach(row.sections) { section in
-                        popupSection(section, isTile: row.sections.count == 2)
-                            .frame(maxWidth: .infinity)
-                            .modifier(PopoverSectionSurface())
-                    }
-                }
-            }
         }
     }
 
