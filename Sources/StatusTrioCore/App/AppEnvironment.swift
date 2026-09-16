@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 
 @MainActor
@@ -84,6 +85,9 @@ final class AppEnvironment {
             openSettings: { settingsWindowController.show() },
             quitAction: { NSApplication.shared.terminate(nil) }
         )
+        settingsWindowController.previewPopover = { [weak controller] in
+            controller?.showPopover()
+        }
         let appIconController = AppIconController(
             store: store,
             settings: settings,

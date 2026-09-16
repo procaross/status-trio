@@ -2,11 +2,12 @@
 
 ## Highest Priority: Match the CI Toolchain
 
-The release workflow is the acceptance environment:
+The fork release workflow verifies two environments:
 
-- Runner: `macos-15`
-- Xcode: `16.4`
-- Swift: `6.1.2`
+- Compatibility: `macos-15`, Xcode `16.4`, Swift `6.1.2`.
+- Packaging / Liquid Glass: `macos-26`, Xcode `26.6`, SDK `26.5`.
+
+Keep the Swift 6.1 compatibility job. Use the modern packaging job so macOS adopts Liquid Glass; do not publish an old-SDK build as a Liquid Glass build.
 
 A newer local toolchain is useful, but it is not proof that CI will compile. Swift code must remain buildable with the CI toolchain.
 
@@ -21,13 +22,13 @@ If a change touches actor isolation, `@MainActor`, `deinit`, SwiftUI bindings, g
 
 ```bash
 gh workflow run release.yml \
-  --repo lingyired/status-trio \
+  --repo procaross/status-trio \
   --ref <branch> \
   -f version=<next-version> \
   -f build=<next-build> \
   -f publish=false
 
-gh run watch <run-id> --repo lingyired/status-trio --exit-status
+gh run watch <run-id> --repo procaross/status-trio --exit-status
 ```
 
 Do not create a release if that preflight has not passed.

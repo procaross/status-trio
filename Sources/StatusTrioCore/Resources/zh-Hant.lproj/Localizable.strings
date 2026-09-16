@@ -1,3 +1,4 @@
+/* Modified in the procaross/status-trio UI fork. */
 "menu.version" = "Status Trio %@";
 "menu.settings" = "設定…";
 "menu.quit" = "結束 Status Trio";
@@ -220,3 +221,5 @@
 "settings.audio.displayRules" = "顯示規則";
 "settings.audio.activeDeviceFootnote" = "目前活躍的音訊輸出裝置將優先以主題色強調顯示。";
 "settings.audio.inUse" = "使用中";
+
+"settings.preview.panel" = "預覽面板";

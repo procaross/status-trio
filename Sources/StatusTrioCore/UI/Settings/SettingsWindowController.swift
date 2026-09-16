@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 import Combine
 import SwiftUI
@@ -10,6 +11,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     private let activationPolicy: AppActivationPolicy
     private var localizationCancellable: AnyCancellable?
     private var ownsActivationPolicy = false
+    var previewPopover: () -> Void = {}
 
     init(
         store: SettingsStore,
@@ -65,7 +67,16 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             SettingsView(
                 store: store,
                 statusStore: statusStore,
-                localization: localization
+                localization: localization,
+                previewPopover: { [weak self] in
+                    self?.window?.performClose(nil)
+                    // Let closing the regular settings window finish before the
+                    // accessory app activates and presents its transient popup.
+                    Task { @MainActor [weak self] in
+                        await Task.yield()
+                        self?.previewPopover()
+                    }
+                }
             )
         }
 

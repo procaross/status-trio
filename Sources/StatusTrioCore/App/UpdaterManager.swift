@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 import Combine
 import Sparkle
@@ -33,7 +34,13 @@ final class UpdaterManager: NSObject, ObservableObject, SPUUpdaterDelegate {
             .assign(to: &$automaticallyChecksForUpdates)
     }
 
+    /// Personal forks must not silently replace themselves with an upstream binary.
+    static func updatesEnabled(in info: [String: Any]) -> Bool {
+        info["StatusTrioUpdatesEnabled"] as? Bool ?? true
+    }
+
     func start() {
+        guard Self.updatesEnabled(in: Bundle.main.infoDictionary ?? [:]) else { return }
         #if DEBUG
         return
         #else
@@ -42,6 +49,7 @@ final class UpdaterManager: NSObject, ObservableObject, SPUUpdaterDelegate {
     }
 
     func checkForUpdates() {
+        guard Self.updatesEnabled(in: Bundle.main.infoDictionary ?? [:]) else { return }
         #if DEBUG
         return
         #else

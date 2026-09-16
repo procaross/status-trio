@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 import SwiftUI
 
@@ -21,16 +22,20 @@ struct WiFiStatusView: View {
                     onOpenLocationSettings()
                 }
             } label: {
-                HStack(spacing: 10) {
-                    WiFiStatusIcon(wifi: wifi)
-                    VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 12) {
+                    PopoverStatusBadge(symbol: networkSymbol, tint: wifi.state.isNetworkAssociated ? .teal : .secondary)
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(localization.string(.networkTitle))
-                            .font(.headline)
-                        subtitle
+                            .font(.system(size: 12, weight: .medium))
+                        Text(subtitle)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    Spacer()
+                    Spacer(minLength: 4)
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(.tertiary)
                 }
                 .contentShape(Rectangle())
@@ -38,47 +43,32 @@ struct WiFiStatusView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(wifiAccessibilityLabel)
 
-            Button(
-                localization.string(.wifiActionOpenSettings),
-                systemImage: "gearshape",
+            PopoverIconButton(
+                symbol: "ellipsis",
+                title: localization.string(.wifiActionOpenSettings),
                 action: onOpenWiFiSettings
             )
-            .labelStyle(.iconOnly)
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .help(localization.string(.wifiActionOpenSettings))
-            .frame(width: 24, height: 24)
         }
     }
 
-    @ViewBuilder
-    private var subtitle: some View {
-        if let ssid = wifi.ssid, !ssid.isEmpty {
-            Text(ssid)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-        } else if wifi.state.isNetworkAssociated && wifi.nameAccess == .notDetermined {
-            Button(localization.string(.wifiActionRequestNameAccess), action: onRequestNameAccess)
-                .buttonStyle(.plain)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        } else if wifi.state.isNetworkAssociated
-                    && (wifi.nameAccess == .denied || wifi.nameAccess == .restricted) {
-            Button(localization.string(.wifiActionOpenLocationSettings), action: onOpenLocationSettings)
-                .buttonStyle(.plain)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        } else {
-            Text(StatusPresentation.wifiSubtitle(wifi, localization: localization))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
+    private var networkSymbol: String {
+        switch wifi.state {
+        case .off, .unavailable: "wifi.slash"
+        case .noInternet: "wifi.exclamationmark"
+        case .hotspot: "personalhotspot"
+        default: "wifi"
         }
+    }
+
+    private var subtitle: String {
+        if let ssid = wifi.ssid, !ssid.isEmpty { return ssid }
+        if wifi.state.isNetworkAssociated && wifi.nameAccess == .notDetermined {
+            return localization.string(.wifiActionRequestNameAccess)
+        }
+        if wifi.state.isNetworkAssociated && (wifi.nameAccess == .denied || wifi.nameAccess == .restricted) {
+            return localization.string(.wifiActionOpenLocationSettings)
+        }
+        return StatusPresentation.wifiSubtitle(wifi, localization: localization)
     }
 
     private var wifiAccessibilityLabel: String {

@@ -1,3 +1,5 @@
+> **个人界面分支：** 调整原生 Liquid Glass 面板、紧凑控件与实时预览；详见 [分支说明](docs/liquid-glass-fork.md)。此构建已关闭上游自动更新。以下保留原项目说明与署名。
+
 <p align="center">
   <img src="screenshots/status-style.png" width="288" alt="不同设置下呈现的四种 Status Trio 菜单栏图标样式">
 </p>

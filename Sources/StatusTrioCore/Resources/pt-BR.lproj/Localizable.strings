@@ -1,3 +1,4 @@
+/* Modified in the procaross/status-trio UI fork. */
 "menu.version" = "Status Trio %@";
 "menu.settings" = "Ajustes…";
 "menu.quit" = "Sair do Status Trio";
@@ -220,3 +221,5 @@
 "settings.audio.displayRules" = "Regras de exibição";
 "settings.audio.activeDeviceFootnote" = "O dispositivo de saída de áudio ativo é destacado com a cor de destaque.";
 "settings.audio.inUse" = "Em uso";
+
+"settings.preview.panel" = "Prévia do painel";

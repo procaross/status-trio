@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 import SwiftUI
 import XCTest
@@ -5,38 +6,17 @@ import XCTest
 
 @MainActor
 final class SettingsRowHitAreaTests: XCTestCase {
-    func testPopupSettingsButtonUsesFullRowHitArea() {
-        let localization = makeLocalization()
-        let settings = makeSettings()
-        let store = SystemStatusStore(
-            batteryMonitor: EmptyBatteryMonitor(),
-            wifiMonitor: EmptyWiFiMonitor(),
-            volumeMonitor: EmptyVolumeMonitor()
-        )
-        let view = StatusPopoverView(
-            store: store,
-            settings: settings,
-            requestWiFiNameAccess: {},
-            requestBluetoothAuthorization: {},
-            openBatterySettings: {},
-            openWiFiSettings: {},
-            openLocationSettings: {},
-            openBluetoothSettings: {},
-            openSettings: {},
-            openSoundSettings: {},
-            quit: {}
-        )
-        .environmentObject(localization)
-
+    func testPopupToolbarActionsHaveComfortableHitAreas() {
+        let view = HStack {
+            PopoverIconButton(symbol: "gearshape", title: "Settings", action: {})
+            PopoverIconButton(symbol: "power", title: "Quit", action: {})
+        }
         let hitAreaWidths = interactiveSubViewWidths(
             for: view,
-            size: NSSize(width: 300, height: 600)
+            size: NSSize(width: 64, height: 28)
         )
-
-        XCTAssertTrue(
-            hitAreaWidths.contains { abs($0 - 268) < 0.5 },
-            "Expected the Settings row to react across the popup content width, got \(hitAreaWidths)"
-        )
+        XCTAssertEqual(hitAreaWidths.count, 2)
+        XCTAssertTrue(hitAreaWidths.allSatisfy { $0 >= 28 })
     }
 
     func testPreferenceCheckboxRowUsesFullRowHitArea() {

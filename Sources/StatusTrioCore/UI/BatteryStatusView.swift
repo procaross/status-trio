@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import SwiftUI
 
 struct BatteryStatusView: View {
@@ -7,38 +8,30 @@ struct BatteryStatusView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: batterySymbolName)
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(batterySymbolColor)
-                .frame(width: 26, height: 26)
-                .accessibilityHidden(true)
+            PopoverStatusBadge(symbol: batterySymbolName, tint: batterySymbolColor)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(StatusPresentation.batteryTitle(battery, localization: localization))
-                    .font(.system(size: 13.5, weight: .semibold))
-                    .monospacedDigit()
+            VStack(alignment: .leading, spacing: 4) {
+                Text(localization.string(.settingsPopupOrderBattery))
+                    .font(.system(size: 12, weight: .medium))
                 Text(StatusPresentation.batterySubtitle(battery, localization: localization))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            Spacer()
-
+            Spacer(minLength: 6)
             if battery.isPresent {
-                Button(action: onOpenBatterySettings) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help(localization.string(.batteryActionOpenSettings))
-                .accessibilityLabel(localization.string(.batteryActionOpenSettings))
+                Text(battery.percentage.formatted(.percent.scale(1).locale(localization.resolvedLanguage.locale)))
+                    .font(.system(size: 27, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                    .accessibilityLabel(StatusPresentation.batteryTitle(battery, localization: localization))
+                PopoverIconButton(
+                    symbol: "ellipsis",
+                    title: localization.string(.batteryActionOpenSettings),
+                    action: onOpenBatterySettings
+                )
             }
         }
+        .padding(.vertical, 2)
     }
 
     private var batterySymbolName: String {
