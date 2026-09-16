@@ -17,38 +17,29 @@ struct VolumeControlsView: View {
     @State private var showsOutputs = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(localization.string(.settingsPopupOrderVolume))
-                        .font(.system(size: 13, weight: .semibold))
-                    Text(StatusPresentation.volumeSubtitle(volume, localization: localization))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text(localization.string(.settingsPopupOrderVolume))
+                    .font(.system(size: 13, weight: .semibold))
                 Spacer(minLength: 4)
                 Text(percentageText)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 11, weight: .medium))
                     .monospacedDigit()
-                Button { showsOutputs.toggle() } label: {
-                    PopoverStatusBadge(symbol: "airplay.audio", tint: .blue, size: 30)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .help(localization.string(.volumeOutputTitle))
-                .accessibilityLabel(localization.string(.volumeOutputTitle))
-                .accessibilityValue(localization.string(showsOutputs ? .volumeOutputCollapse : .volumeOutputExpand))
+                    .opacity(0.8)
             }
+            .padding(.horizontal, 2)
 
             HStack(spacing: 10) {
-                PopoverIconButton(
-                    symbol: volume.isMuted ? "speaker.slash" : "speaker.wave.1",
-                    title: localization.string(volume.isMuted ? .volumeUnmuted : .volumeMuted),
-                    action: onToggleMute
-                )
+                Button(action: onToggleMute) {
+                    Image(systemName: volume.isMuted ? "speaker.slash.fill" : "speaker.wave.1.fill")
+                        .font(.system(size: 12))
+                        .frame(width: 24, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
                 .disabled(!isEnabled)
+                .help(localization.string(volume.isMuted ? .volumeUnmuted : .volumeMuted))
+                .accessibilityLabel(localization.string(volume.isMuted ? .volumeUnmuted : .volumeMuted))
                 .accessibilityValue(volume.isMuted ? localization.string(.volumeMuted) : "")
 
                 Slider(
@@ -62,21 +53,30 @@ struct VolumeControlsView: View {
                     in: 0...1,
                     onEditingChanged: handleVolumeEditing
                 )
-                .controlSize(.small)
+                .controlSize(.mini)
                 .tint(volume.isMuted ? Color.secondary : (colorScheme == .dark ? Color.white : Color.accentColor))
                 .disabled(!isEnabled)
-                .frame(minHeight: 24)
+                .frame(minHeight: 28)
                 .accessibilityLabel(localization.string(.volumeAccessibilityLabel))
                 .accessibilityValue(percentageText)
 
-                Image(systemName: "speaker.wave.3")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
+                Button { showsOutputs.toggle() } label: {
+                    PopoverStatusBadge(symbol: "airplay.audio", tint: .blue, size: 28)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help(StatusPresentation.volumeSubtitle(volume, localization: localization))
+                .accessibilityLabel(localization.string(.volumeOutputTitle))
+                .accessibilityValue(localization.string(showsOutputs ? .volumeOutputCollapse : .volumeOutputExpand))
             }
-            .padding(.vertical, 2)
 
             if showsOutputs {
+                Text(StatusPresentation.volumeSubtitle(volume, localization: localization))
+                    .font(.system(size: 11, weight: .medium))
+                    .opacity(0.85)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .padding(.top, 6)
                 Text(localization.string(.volumeOutputTitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)

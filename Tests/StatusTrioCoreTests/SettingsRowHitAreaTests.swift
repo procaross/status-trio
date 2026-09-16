@@ -42,7 +42,7 @@ final class SettingsRowHitAreaTests: XCTestCase {
             let controller = NSHostingController(rootView: tile)
             let size = controller.sizeThatFits(in: NSSize(width: 154, height: 600))
             XCTAssertEqual(size.width, 154, accuracy: 0.5)
-            XCTAssertLessThanOrEqual(size.height, 140)
+            XCTAssertLessThanOrEqual(size.height, 68)
         }
     }
 
@@ -60,7 +60,7 @@ final class SettingsRowHitAreaTests: XCTestCase {
             .environmentObject(makeLocalization())
         let controller = NSHostingController(rootView: view)
         let size = controller.sizeThatFits(in: NSSize(width: 292, height: 1000))
-        XCTAssertLessThanOrEqual(size.height, 100)
+        XCTAssertLessThanOrEqual(size.height, 60)
         XCTAssertGreaterThan(size.height, 40)
     }
 

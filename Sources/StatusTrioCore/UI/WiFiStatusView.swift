@@ -14,27 +14,21 @@ struct WiFiStatusView: View {
     @ViewBuilder var body: some View {
         if isTile {
             Button { onOpenDetails(NSEvent.modifierFlags.contains(.option)) } label: {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        PopoverStatusBadge(symbol: networkSymbol, tint: .blue, size: 32)
-                        Text(localization.string(.networkTitle))
+                HStack(spacing: 10) {
+                    PopoverStatusBadge(symbol: networkSymbol, tint: .blue)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(localization.string(.wifiTitle))
                             .font(.system(size: 13, weight: .semibold))
-                        Spacer(minLength: 0)
+                            .lineLimit(1)
+                        Text(StatusPresentation.wifiSubtitle(wifi, localization: localization))
+                            .font(.system(size: 12, weight: .medium))
+                            .opacity(0.9)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
                     Spacer(minLength: 0)
-                    Text(StatusPresentation.wifiSubtitle(wifi, localization: localization))
-                        .font(.system(size: 15, weight: .semibold))
-                        .lineLimit(2)
-                        .truncationMode(.middle)
-                    HStack {
-                        Text(StatusPresentation.wifiValue(wifi, localization: localization))
-                            .font(.system(size: 11, weight: .medium))
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
-                    }
-                    .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, minHeight: 104, maxHeight: 104, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: 40, maxHeight: 40, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

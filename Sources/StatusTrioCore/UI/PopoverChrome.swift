@@ -1,13 +1,13 @@
 import SwiftUI
 
 // Modified in the procaross/status-trio UI fork.
-/// Clear system glass supplies refraction; a restrained rim defines the edge.
+/// Let AppKit render the glass edge instead of painting additional bevels.
 struct PopoverSectionSurface: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
         content
-            .padding(14)
+            .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(PopoverGlassSurface(reduceTransparency: reduceTransparency))
     }
@@ -15,7 +15,7 @@ struct PopoverSectionSurface: ViewModifier {
 
 struct PopoverGlassSurface: ViewModifier {
     let reduceTransparency: Bool
-    var radius: CGFloat = 28
+    var radius: CGFloat = 32
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: radius, style: .continuous) }
 
     @ViewBuilder
@@ -28,23 +28,11 @@ struct PopoverGlassSurface: ViewModifier {
                 content
                     .foregroundStyle(.white)
                     .environment(\.colorScheme, .dark)
-                    .background(Color.black.opacity(0.20), in: shape)
-                    .glassEffect(.clear, in: shape)
-                    .overlay {
-                        shape.strokeBorder(.black.opacity(0.18), lineWidth: 0.6)
-                            .overlay {
-                                shape.inset(by: 0.7).strokeBorder(
-                                    LinearGradient(colors: [.white, .white.opacity(0.28), .white.opacity(0.95)],
-                                                   startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1.1
-                                )
-                            }
-                            .overlay {
-                                shape.inset(by: 2).strokeBorder(.white.opacity(0.16), lineWidth: 0.6)
-                            }
+                    .background {
+                        NativePopoverGlass(radius: radius)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
-                    .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
             } else {
                 content.background(.ultraThinMaterial, in: shape)
             }
@@ -54,6 +42,28 @@ struct PopoverGlassSurface: ViewModifier {
         }
     }
 }
+
+#if compiler(>=6.2)
+@available(macOS 26.0, *)
+private struct NativePopoverGlass: NSViewRepresentable {
+    let radius: CGFloat
+
+    func makeNSView(context: Context) -> NSGlassEffectView {
+        let view = NSGlassEffectView()
+        view.style = .clear
+        // Keep the optical surface light; white foreground content is configured
+        // separately. Native glass supplies its own rim, highlights and shadow.
+        view.appearance = NSAppearance(named: .aqua)
+        view.tintColor = NSColor.black.withAlphaComponent(0.30)
+        view.cornerRadius = radius
+        return view
+    }
+
+    func updateNSView(_ view: NSGlassEffectView, context: Context) {
+        view.cornerRadius = radius
+    }
+}
+#endif
 
 
 struct PopoverStatusBadge: View {
