@@ -4,12 +4,14 @@ This fork preserves Status Trio's original license and attribution. It changes t
 
 ## Design
 
-- Use the system NSPopover surface, with no extra opaque hosting background or nested blur. A build linked against macOS 26 or newer adopts the system Liquid Glass presentation. Older systems retain their native popover material.
-- Group battery, network, and audio with spacing, restrained tinted symbols and lightweight section fills instead of separator rules.
+- On macOS 26+, use a transparent AppKit panel with SwiftUI Liquid Glass surfaces. This lets glass sample the desktop instead of an opaque popover shell. A shared GlassEffectContainer batches rendering without merging separate cards. Older systems and Swift 6.1 builds retain NSPopover and system material backgrounds.
+- Group battery, network, and audio in rounded glass surfaces with a subtle edge highlight, white circular badges, and the system regular glass material for adaptive contrast with light content. The panel follows the control-center visual treatment without changing system appearance.
 - Use native sliders and switches. Output devices use a compact selected row with a checkmark; long names truncate in the middle and retain a full tooltip and accessibility label.
 - Keep critical numbers distinct from secondary status text. Follow the selected app locale for numeric formatting.
 - Settings → panel → Preview panel opens the actual live popup. This closes the settings window first, so the preview uses the same activation and dismissal behavior as a menu-bar click.
-- Respect Reduce Transparency. Do not add continuous animations, custom rendering loops, private material APIs, or extra monitoring timers.
+- Respect Reduce Transparency with opaque system backgrounds. Do not add continuous animations, custom rendering loops, private material APIs, or extra monitoring timers.
+- Keep the native menu-bar button and accessibility actions, using a compact slot and a circular selection even for wide icon configurations. Selection clears on dismissal and after the context menu closes.
+- The transparent panel stays within the active display, resizes when detail views or output lists change, and closes on Escape, outside clicks or application deactivation. Temporary key-window changes and attached password sheets do not dismiss the panel. Reopening the app while its panel is visible preserves that panel; Settings remains available from its gear button.
 
 ## Building
 

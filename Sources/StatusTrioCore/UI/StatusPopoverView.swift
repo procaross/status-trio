@@ -264,6 +264,7 @@ struct StatusPopoverView: View {
     let openSoundSettings: () -> Void
     let quit: () -> Void
     @State private var panel: PopoverPanel = .summary
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         Group {
@@ -280,6 +281,7 @@ struct StatusPopoverView: View {
                     onOpenLocationSettings: openLocationSettings,
                     showsDetailsInitially: showDetails
                 )
+                .modifier(PopoverSectionSurface())
             case .bluetooth:
                 BluetoothDeviceListView(
                     controller: store.bluetoothDevices,
@@ -290,6 +292,7 @@ struct StatusPopoverView: View {
                     onRequestAuthorization: requestBluetoothAuthorization,
                     onOpenBluetoothSettings: openBluetoothSettings
                 )
+                .modifier(PopoverSectionSurface())
             }
         }
         .padding(14)
@@ -297,31 +300,34 @@ struct StatusPopoverView: View {
     }
 
     private var summary: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Status Trio")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                PopoverIconButton(
-                    symbol: "gearshape",
-                    title: localization.string(.menuSettings),
-                    action: openSettings
-                )
-                .keyboardShortcut(",", modifiers: .command)
-                PopoverIconButton(
-                    symbol: "power",
-                    title: localization.string(.menuQuit),
-                    action: quit
-                )
-                .keyboardShortcut("q", modifiers: .command)
-            }
-            .padding(.horizontal, 4)
-            .padding(.bottom, 2)
+        PopoverGlassGroup {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Status Trio")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    PopoverIconButton(
+                        symbol: "gearshape",
+                        title: localization.string(.menuSettings),
+                        action: openSettings
+                    )
+                    .keyboardShortcut(",", modifiers: .command)
+                    PopoverIconButton(
+                        symbol: "power",
+                        title: localization.string(.menuQuit),
+                        action: quit
+                    )
+                    .keyboardShortcut("q", modifiers: .command)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .modifier(PopoverGlassSurface(reduceTransparency: reduceTransparency, radius: 22))
 
-            ForEach(settings.visiblePopupSections) { section in
-                popupSection(section)
-                    .modifier(PopoverSectionSurface())
+                ForEach(settings.visiblePopupSections) { section in
+                    popupSection(section)
+                        .modifier(PopoverSectionSurface())
+                }
             }
         }
     }

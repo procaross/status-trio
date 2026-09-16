@@ -1,3 +1,4 @@
+// Modified in the procaross/status-trio UI fork.
 import AppKit
 
 @MainActor
@@ -44,7 +45,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
                 anchoredAtScreenPoint: pointer
             )
         case .openSettings:
-            environment.settingsWindowController.show()
+            // Reactivating an already visible panel must not replace it with
+            // Settings (Finder, accessibility clients and Spotlight send reopen).
+            if !environment.statusBarController.isPopoverShown {
+                environment.settingsWindowController.show()
+            }
         case .none:
             break
         }
