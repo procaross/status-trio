@@ -26,28 +26,31 @@ struct PopoverGlassSurface: AnimatableModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if reduceTransparency {
-            content.background(Color(nsColor: .controlBackgroundColor), in: shape.scale(surfaceScale))
-        } else {
-#if compiler(>=6.2)
-            if #available(macOS 26.0, *) {
-                content
-                    .foregroundStyle(.white)
-                    .environment(\.colorScheme, .dark)
-                    .background {
-                        NativePopoverGlass(radius: radius, highlight: highlight)
-                            .overlay { shape.fill(.white.opacity(highlight * 0.10)) }
-                            .scaleEffect(surfaceScale)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                    }
+        Group {
+            if reduceTransparency {
+                content.background(Color(nsColor: .controlBackgroundColor), in: shape.scale(surfaceScale))
             } else {
-                content.background(.ultraThinMaterial, in: shape.scale(surfaceScale))
-            }
+#if compiler(>=6.2)
+                if #available(macOS 26.0, *) {
+                    content
+                        .foregroundStyle(.white)
+                        .environment(\.colorScheme, .dark)
+                        .background {
+                            NativePopoverGlass(radius: radius)
+                                .overlay { shape.fill(.white.opacity(highlight * 0.10)) }
+                                .scaleEffect(surfaceScale)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                } else {
+                    content.background(.ultraThinMaterial, in: shape.scale(surfaceScale))
+                }
 #else
-            content.background(.ultraThinMaterial, in: shape.scale(surfaceScale))
+                content.background(.ultraThinMaterial, in: shape.scale(surfaceScale))
 #endif
+            }
         }
+        .anchorPreference(key: PopoverGlassBounds.self, value: .bounds) { [$0] }
     }
 }
 
@@ -84,22 +87,21 @@ struct PopoverInteractiveSectionSurface: ViewModifier {
 @available(macOS 26.0, *)
 private struct NativePopoverGlass: NSViewRepresentable {
     let radius: CGFloat
-    let highlight: Double
 
     func makeNSView(context: Context) -> NSGlassEffectView {
         let view = NSGlassEffectView()
-        view.style = .clear
-        // Keep the optical surface light; white foreground content is configured
-        // separately. Native glass supplies its own rim, highlights and shadow.
+        view.style = .regular
+        // Let regular glass supply diffusion and adaptive contrast itself.
+        // The backdrop mask leaves this region free of stacked materials.
         view.appearance = NSAppearance(named: .aqua)
-        view.tintColor = NSColor.black.withAlphaComponent(0.30)
+        view.tintColor = NSColor.black.withAlphaComponent(0.18)
         view.cornerRadius = radius
         return view
     }
 
     func updateNSView(_ view: NSGlassEffectView, context: Context) {
         view.cornerRadius = radius
-        view.tintColor = NSColor.black.withAlphaComponent(0.30 - highlight * 0.07)
+        view.tintColor = NSColor.black.withAlphaComponent(0.18)
     }
 }
 #endif
