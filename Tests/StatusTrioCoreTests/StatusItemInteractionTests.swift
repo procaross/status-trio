@@ -74,4 +74,42 @@ final class StatusItemInteractionTests: XCTestCase {
             XCTAssertGreaterThan(try alpha(36, 36), try alpha(22, 22))
         }
     }
+
+    func testBackdropDoesNotStackMaterialUnderGlassCards() throws {
+        for scale: CGFloat in [1, 2] {
+            let regions = [CGRect(x: 32, y: 32, width: 154, height: 64),
+                           CGRect(x: 198, y: 32, width: 154, height: 64),
+                           CGRect(x: 32, y: 112, width: 320, height: 74)]
+            let image = FeatheredBackdropView.mask(size: NSSize(width: 384, height: 400),
+                                                   scale: scale, glassRegions: regions)
+            let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil)))
+            func alpha(_ x: Int, _ y: Int) throws -> CGFloat {
+                try XCTUnwrap(bitmap.colorAt(x: Int(CGFloat(x) * scale), y: Int(CGFloat(y) * scale))).alphaComponent
+            }
+            XCTAssertEqual(try alpha(100, 64), 0, accuracy: 0.01)
+            XCTAssertEqual(try alpha(260, 64), 0, accuracy: 0.01)
+            XCTAssertEqual(try alpha(192, 145), 0, accuracy: 0.01)
+            // The gap/background stays diffused; rectangular cutouts must not
+            // remove the material outside a card's rounded corners.
+            XCTAssertGreaterThan(try alpha(44, 114), 0.5)
+            XCTAssertGreaterThan(try alpha(192, 220), 0.99)
+            XCTAssertEqual(try alpha(0, 220), 0, accuracy: 0.01)
+            XCTAssertLessThan(try alpha(192, 185), try alpha(192, 189))
+            XCTAssertLessThan(try alpha(192, 189), try alpha(192, 194))
+        }
+    }
+
+    func testBackdropReusesMaskDuringHoverButUpdatesForExpandedAudio() throws {
+        let view = FeatheredBackdropView(frame: NSRect(x: 0, y: 0, width: 384, height: 400))
+        let audio = CGRect(x: 32, y: 112, width: 320, height: 74)
+        view.glassRegions = [audio]
+        view.layout()
+        let original = try XCTUnwrap(view.maskImage)
+        view.glassRegions = [audio.insetBy(dx: -2, dy: -1)]
+        view.layout()
+        XCTAssertTrue(view.maskImage === original)
+        view.glassRegions = [CGRect(x: 32, y: 112, width: 320, height: 190)]
+        view.layout()
+        XCTAssertFalse(view.maskImage === original)
+    }
 }
