@@ -40,7 +40,7 @@ final class StatusItemInteractionTests: XCTestCase {
         }
     }
 
-    func testBackdropMaskHasOpaqueCenterAndFeatheredBoundary() throws {
+    func testBlurRadiusMaskHasFullStrengthCenterAndFeatheredBoundary() throws {
         let mask = FeatheredBackdropView.mask(size: NSSize(width: 364, height: 250))
         let cgImage = try XCTUnwrap(mask.cgImage(forProposedRect: nil, context: nil, hints: nil))
         let bitmap = NSBitmapImageRep(cgImage: cgImage)
@@ -50,7 +50,7 @@ final class StatusItemInteractionTests: XCTestCase {
         XCTAssertLessThan(edge.alphaComponent, 0.2)
     }
 
-    func testBackdropMaterialFadesContinuouslyBeforeContentInsetsAtBothScales() throws {
+    func testBlurRadiusFadesContinuouslyBeforeContentInsetsAtBothScales() throws {
         for scale: CGFloat in [1, 2] {
             let image = FeatheredBackdropView.mask(size: NSSize(width: 384, height: 270), scale: scale)
             let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil)))
@@ -75,7 +75,7 @@ final class StatusItemInteractionTests: XCTestCase {
         }
     }
 
-    func testBackdropHasNoHolesOrRingsAtCardBoundaries() throws {
+    func testBlurRadiusHasNoHolesOrRingsAtCardBoundaries() throws {
         for scale: CGFloat in [1, 2] {
             let image = FeatheredBackdropView.mask(size: NSSize(width: 384, height: 400), scale: scale)
             let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil)))

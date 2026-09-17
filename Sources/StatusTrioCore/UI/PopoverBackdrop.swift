@@ -1,25 +1,52 @@
 import AppKit
 import SwiftUI
 
-/// Sample windows behind the panel, with a soft alpha boundary rather than a
-/// solid rounded SwiftUI fill. One continuous material covers cards AND gaps;
-/// per-card cutouts create contrasting halos and let sharp text leak through.
-/// The mask is rebuilt only when layout size or backing scale changes.
+/// Blur the live backdrop without painting a material-colored rectangle.
+/// The gradient controls diffusion strength, not the opacity of a colored fill.
 struct PopoverBackdrop: NSViewRepresentable {
     func makeNSView(context: Context) -> FeatheredBackdropView {
-        let view = FeatheredBackdropView()
-        view.material = .popover
-        view.blendingMode = .behindWindow
-        view.state = .active
-        return view
+        FeatheredBackdropView()
     }
     func updateNSView(_ view: FeatheredBackdropView, context: Context) {
     }
 }
 
-final class FeatheredBackdropView: NSVisualEffectView {
+final class FeatheredBackdropView: NSView {
+    private let blur: LiveBackdropBlur?
+    private var fallback: NSVisualEffectView?
+    private(set) var maskImage: NSImage?
+    var usesLiveBlur: Bool { blur != nil && fallback == nil }
     private var maskSize = NSSize.zero
     private var maskScale: CGFloat = 0
+
+    init(frame: NSRect = .zero, allowsLiveBlur: Bool = true) {
+        blur = allowsLiveBlur ? LiveBackdropBlur() : nil
+        super.init(frame: frame)
+        wantsLayer = true
+        if let blur { layer?.addSublayer(blur.layer) }
+        else { installFallback() }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if let window, usesLiveBlur, !LiveBackdropBlur.prepare(window) { installFallback() }
+    }
+
+    private func installFallback() {
+        guard fallback == nil else { return }
+        blur?.layer.removeFromSuperlayer()
+        let view = NSVisualEffectView(frame: bounds)
+        view.material = .popover
+        view.blendingMode = .behindWindow
+        view.state = .active
+        view.autoresizingMask = [.width, .height]
+        view.maskImage = maskImage
+        addSubview(view)
+        fallback = view
+    }
 
     override func layout() {
         super.layout()
@@ -37,12 +64,17 @@ final class FeatheredBackdropView: NSVisualEffectView {
               bounds.size != maskSize || scale != maskScale else { return }
         maskSize = bounds.size
         maskScale = scale
-        maskImage = Self.mask(size: maskSize, scale: scale)
+        let mask = Self.mask(size: maskSize, scale: scale)
+        maskImage = mask
+        if let cgImage = mask.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+            blur?.update(frame: bounds, mask: cgImage, scale: scale)
+        }
+        fallback?.maskImage = mask
     }
 
-    /// Fade the material itself across 28 points, including the corners. A solid
-    /// rounded fill with a blurred shadow still leaves a visible inner contour.
-    /// This bitmap is generated at backing resolution only after size/scale changes.
+    /// Radius ramps from zero at the outer edge to full diffusion inside. The
+    /// image is passed to variableBlur.inputMaskImage, NOT CALayer.mask/opacity.
+    /// Cache it across hover/press frames and regenerate only for size/scale.
     static func mask(size: NSSize, scale: CGFloat = 2) -> NSImage {
         let width = max(1, Int(ceil(size.width * scale)))
         let height = max(1, Int(ceil(size.height * scale)))
@@ -61,9 +93,9 @@ final class FeatheredBackdropView: NSVisualEffectView {
                 let opacity = t * t * (3 - 2 * t)
                 let alpha = UInt8((opacity * 255).rounded())
                 let offset = y * bitmap.bytesPerRow + x * 4
-                pixels[offset] = 255
-                pixels[offset + 1] = 255
-                pixels[offset + 2] = 255
+                pixels[offset] = alpha
+                pixels[offset + 1] = alpha
+                pixels[offset + 2] = alpha
                 pixels[offset + 3] = alpha
             }
         }
