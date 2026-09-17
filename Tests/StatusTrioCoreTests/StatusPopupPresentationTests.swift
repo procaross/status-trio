@@ -17,11 +17,14 @@ final class StatusPopupPresentationTests: XCTestCase {
     }
 
     func testIconSlotKeepsSmallIconsClickableAndLargeIconsUnclipped() {
-        for size in [16.0, 28.0, 36.0] {
-            let width = CompactStatusItemCell.slotWidth(iconSize: size, barHeight: 24)
-            XCTAssertGreaterThanOrEqual(width, 24)
-            XCTAssertGreaterThanOrEqual(width, size)
-            XCTAssertLessThanOrEqual(width, max(24, size + 4))
+        for height: CGFloat in [22, 24, 32] {
+            for size in [16.0, 28.0, 36.0] {
+                let displayed = CompactStatusItemCell.displaySize(requested: size, barHeight: height)
+                let width = CompactStatusItemCell.slotWidth(iconSize: size, barHeight: height)
+                XCTAssertGreaterThanOrEqual(width, height)
+                XCTAssertGreaterThanOrEqual(width - displayed, 4)
+                XCTAssertLessThanOrEqual(width, max(height, displayed + 8))
+            }
         }
     }
 
