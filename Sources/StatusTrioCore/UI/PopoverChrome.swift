@@ -50,7 +50,6 @@ struct PopoverGlassSurface: AnimatableModifier {
 #endif
             }
         }
-        .anchorPreference(key: PopoverGlassBounds.self, value: .bounds) { [$0] }
     }
 }
 
@@ -90,18 +89,18 @@ private struct NativePopoverGlass: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSGlassEffectView {
         let view = NSGlassEffectView()
-        view.style = .regular
-        // Let regular glass supply diffusion and adaptive contrast itself.
-        // The backdrop mask leaves this region free of stacked materials.
+        view.style = .clear
+        // The shared backdrop provides diffusion. Clear glass adds the native
+        // refractive edge without a second regular material's milky fill.
         view.appearance = NSAppearance(named: .aqua)
-        view.tintColor = NSColor.black.withAlphaComponent(0.18)
+        view.tintColor = NSColor.black.withAlphaComponent(0.22)
         view.cornerRadius = radius
         return view
     }
 
     func updateNSView(_ view: NSGlassEffectView, context: Context) {
         view.cornerRadius = radius
-        view.tintColor = NSColor.black.withAlphaComponent(0.18)
+        view.tintColor = NSColor.black.withAlphaComponent(0.22)
     }
 }
 #endif

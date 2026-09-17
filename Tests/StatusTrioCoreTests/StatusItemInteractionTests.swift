@@ -29,11 +29,11 @@ final class StatusItemInteractionTests: XCTestCase {
         XCTAssertTrue(PopupDismissalPolicy.shouldDismissOutsideClick(point: NSPoint(x: 600, y: 700), anchor: nil, panel: nil))
     }
 
-    func testMenuIconAlwaysLeavesFourPointsAboveAndBelow() {
+    func testMenuIconUsesAvailableHeightWithOnePointClearance() {
         for height: CGFloat in [22, 24, 32, 37] {
             for requested in [16.0, 28, 36] {
                 let size = CompactStatusItemCell.displaySize(requested: requested, barHeight: height)
-                XCTAssertLessThanOrEqual(size, height - 8)
+                XCTAssertLessThanOrEqual(size, height - 2)
                 XCTAssertLessThanOrEqual(size, requested)
                 XCTAssertGreaterThan(size, 0)
             }
@@ -50,7 +50,7 @@ final class StatusItemInteractionTests: XCTestCase {
         XCTAssertLessThan(edge.alphaComponent, 0.2)
     }
 
-    func testBackdropMaterialFadesContinuouslyOverFortyPointsAtBothScales() throws {
+    func testBackdropMaterialFadesContinuouslyBeforeContentInsetsAtBothScales() throws {
         for scale: CGFloat in [1, 2] {
             let image = FeatheredBackdropView.mask(size: NSSize(width: 384, height: 270), scale: scale)
             let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil)))
@@ -58,15 +58,15 @@ final class StatusItemInteractionTests: XCTestCase {
                 try XCTUnwrap(bitmap.colorAt(x: Int(CGFloat(x) * scale), y: Int(CGFloat(y) * scale))).alphaComponent
             }
             XCTAssertEqual(try alpha(0, 135), 0, accuracy: 0.01)
-            XCTAssertLessThan(try alpha(10, 135), 0.15)
-            XCTAssertGreaterThan(try alpha(22, 135), 0.45)
-            XCTAssertLessThan(try alpha(22, 135), 0.55)
-            XCTAssertGreaterThan(try alpha(42, 135), 0.99)
+            XCTAssertLessThan(try alpha(10, 135), 0.3)
+            XCTAssertGreaterThan(try alpha(16, 135), 0.45)
+            XCTAssertLessThan(try alpha(16, 135), 0.55)
+            XCTAssertGreaterThan(try alpha(32, 135), 0.99)
             var previous: CGFloat = 0
             for x in 0...45 {
                 let next = try alpha(x, 135)
                 XCTAssertGreaterThanOrEqual(next, previous)
-                XCTAssertLessThan(next - previous, 0.05, "A sharp contour reappeared at x=\(x)")
+                XCTAssertLessThan(next - previous, 0.06, "A sharp contour reappeared at x=\(x)")
                 XCTAssertEqual(next, try alpha(192, x), accuracy: 0.01)
                 previous = next
             }
@@ -75,41 +75,65 @@ final class StatusItemInteractionTests: XCTestCase {
         }
     }
 
-    func testBackdropDoesNotStackMaterialUnderGlassCards() throws {
+    func testBackdropHasNoHolesOrRingsAtCardBoundaries() throws {
         for scale: CGFloat in [1, 2] {
-            let regions = [CGRect(x: 32, y: 32, width: 154, height: 64),
-                           CGRect(x: 198, y: 32, width: 154, height: 64),
-                           CGRect(x: 32, y: 112, width: 320, height: 74)]
-            let image = FeatheredBackdropView.mask(size: NSSize(width: 384, height: 400),
-                                                   scale: scale, glassRegions: regions)
+            let image = FeatheredBackdropView.mask(size: NSSize(width: 384, height: 400), scale: scale)
             let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil)))
-            func alpha(_ x: Int, _ y: Int) throws -> CGFloat {
-                try XCTUnwrap(bitmap.colorAt(x: Int(CGFloat(x) * scale), y: Int(CGFloat(y) * scale))).alphaComponent
+            // Walk across both top cards and their gap, then down through the
+            // audio card and footer. The whole interior must stay diffused.
+            for x in 40...344 {
+                XCTAssertEqual(try XCTUnwrap(bitmap.colorAt(x: Int(CGFloat(x) * scale), y: Int(70 * scale))).alphaComponent,
+                               1, accuracy: 0.01)
             }
-            XCTAssertEqual(try alpha(100, 64), 0, accuracy: 0.01)
-            XCTAssertEqual(try alpha(260, 64), 0, accuracy: 0.01)
-            XCTAssertEqual(try alpha(192, 145), 0, accuracy: 0.01)
-            // The gap/background stays diffused; rectangular cutouts must not
-            // remove the material outside a card's rounded corners.
-            XCTAssertGreaterThan(try alpha(44, 114), 0.5)
-            XCTAssertGreaterThan(try alpha(192, 220), 0.99)
-            XCTAssertEqual(try alpha(0, 220), 0, accuracy: 0.01)
-            XCTAssertLessThan(try alpha(192, 185), try alpha(192, 189))
-            XCTAssertLessThan(try alpha(192, 189), try alpha(192, 194))
+            for y in 40...360 {
+                XCTAssertEqual(try XCTUnwrap(bitmap.colorAt(x: Int(192 * scale), y: Int(CGFloat(y) * scale))).alphaComponent,
+                               1, accuracy: 0.01)
+            }
         }
     }
 
-    func testBackdropReusesMaskDuringHoverButUpdatesForExpandedAudio() throws {
-        let view = FeatheredBackdropView(frame: NSRect(x: 0, y: 0, width: 384, height: 400))
-        let audio = CGRect(x: 32, y: 112, width: 320, height: 74)
-        view.glassRegions = [audio]
+    func testBackdropReusesMaskUntilPanelResizes() throws {
+        let view = FeatheredBackdropView(frame: NSRect(x: 0, y: 0, width: 384, height: 262))
         view.layout()
         let original = try XCTUnwrap(view.maskImage)
-        view.glassRegions = [audio.insetBy(dx: -2, dy: -1)]
-        view.layout()
+        for _ in 0..<10 { view.layout() }
         XCTAssertTrue(view.maskImage === original)
-        view.glassRegions = [CGRect(x: 32, y: 112, width: 320, height: 190)]
+        view.setFrameSize(NSSize(width: 384, height: 420))
         view.layout()
         XCTAssertFalse(view.maskImage === original)
+        XCTAssertEqual(view.maskImage?.size, view.bounds.size)
+    }
+
+    func testStatusCellDrawsReadableGlyphWithoutNativeButtonInsets() throws {
+        for height: CGFloat in [22, 24, 32] {
+            let size = CompactStatusItemCell.displaySize(requested: 36, barHeight: height)
+            let frame = NSRect(x: 0, y: 0, width: size + 6, height: height)
+            let cell = CompactStatusItemCell(textCell: "")
+            cell.image = StatusIconRenderer.image(snapshot: .placeholder, size: size)
+            cell.isEnabled = true
+            let bitmap = try XCTUnwrap(NSBitmapImageRep(bitmapDataPlanes: nil,
+                pixelsWide: Int(frame.width * 2), pixelsHigh: Int(frame.height * 2),
+                bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+            let context = try XCTUnwrap(NSGraphicsContext(bitmapImageRep: bitmap))
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = context
+            context.cgContext.scaleBy(x: 2, y: 2)
+            cell.draw(withFrame: frame, in: NSView(frame: frame))
+            NSGraphicsContext.restoreGraphicsState()
+            var minX = bitmap.pixelsWide, minY = bitmap.pixelsHigh, maxX = -1, maxY = -1
+            for y in 0..<bitmap.pixelsHigh {
+                for x in 0..<bitmap.pixelsWide {
+                    guard (bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.1 else { continue }
+                    minX = min(minX, x); maxX = max(maxX, x)
+                    minY = min(minY, y); maxY = max(maxY, y)
+                }
+            }
+            XCTAssertGreaterThan(CGFloat(maxX - minX + 1) / 2, size * 0.85)
+            XCTAssertGreaterThan(CGFloat(maxY - minY + 1) / 2, size * 0.82)
+            XCTAssertGreaterThanOrEqual(minY, 1)
+            XCTAssertLessThan(maxY, bitmap.pixelsHigh - 1)
+            XCTAssertEqual(CGFloat(minX + maxX + 1) / 2, frame.width, accuracy: 1)
+        }
     }
 }

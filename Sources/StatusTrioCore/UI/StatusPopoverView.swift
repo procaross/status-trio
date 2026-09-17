@@ -297,16 +297,14 @@ struct StatusPopoverView: View {
         }
         .padding(32)
         .frame(width: 384)
-        .backgroundPreferenceValue(PopoverGlassBounds.self) { regions in
+        .background {
             if reduceTransparency {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
                     .fill(Color(nsColor: .windowBackgroundColor))
             } else {
-                GeometryReader { geometry in
-                    PopoverBackdrop(glassRegions: regions.map { geometry[$0] })
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                }
+                PopoverBackdrop()
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
         }
     }

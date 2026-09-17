@@ -17,11 +17,11 @@ final class CompactStatusItemCell: NSButtonCell {
     required init(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
     static func displaySize(requested: Double, barHeight: CGFloat) -> CGFloat {
-        min(CGFloat(requested), max(1, barHeight - 8))
+        min(CGFloat(requested), max(1, barHeight - 2))
     }
 
     static func slotWidth(iconSize: Double, barHeight: CGFloat) -> CGFloat {
-        max(barHeight, CGFloat(iconSize) + 4)
+        max(barHeight, displaySize(requested: iconSize, barHeight: barHeight) + 6)
     }
 
     static func selectionRect(in frame: NSRect) -> NSRect {
@@ -35,7 +35,17 @@ final class CompactStatusItemCell: NSButtonCell {
             NSColor.white.withAlphaComponent(isHighlighted ? 0.28 : (isPanelVisible ? 0.20 : 0.10)).setFill()
             NSBezierPath(ovalIn: Self.selectionRect(in: cellFrame)).fill()
         }
-        super.draw(withFrame: cellFrame, in: controlView)
+        // NSButtonCell adds its own image insets even to borderless image-only
+        // cells. Draw the already-sized glyph directly; retain the native button
+        // for tracking, actions and accessibility.
+        guard let image else { return }
+        let scale = min(1, min(cellFrame.width / image.size.width,
+                               cellFrame.height / image.size.height))
+        let size = NSSize(width: image.size.width * scale, height: image.size.height * scale)
+        let rect = NSRect(x: cellFrame.midX - size.width / 2, y: cellFrame.midY - size.height / 2,
+                          width: size.width, height: size.height)
+        image.draw(in: rect, from: .zero, operation: .sourceOver,
+                   fraction: isEnabled ? 1 : 0.5, respectFlipped: true, hints: nil)
     }
 }
 
