@@ -295,8 +295,8 @@ struct StatusPopoverView: View {
                 .modifier(PopoverSectionSurface())
             }
         }
-        .padding(22)
-        .frame(width: 364)
+        .padding(32)
+        .frame(width: 384)
         .background {
             if reduceTransparency {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
@@ -317,6 +317,9 @@ struct StatusPopoverView: View {
                         if row.sections.count == 2 {
                             popupSection(section, isTile: true)
                                 .frame(maxWidth: .infinity)
+                        } else if section == .volume {
+                            popupSection(section, isTile: false)
+                                .modifier(PopoverInteractiveSectionSurface())
                         } else {
                             popupSection(section, isTile: false)
                                 .frame(maxWidth: .infinity)

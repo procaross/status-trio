@@ -49,4 +49,29 @@ final class StatusItemInteractionTests: XCTestCase {
         XCTAssertGreaterThan(center.alphaComponent, 0.95)
         XCTAssertLessThan(edge.alphaComponent, 0.2)
     }
+
+    func testBackdropMaterialFadesContinuouslyOverFortyPointsAtBothScales() throws {
+        for scale: CGFloat in [1, 2] {
+            let image = FeatheredBackdropView.mask(size: NSSize(width: 384, height: 270), scale: scale)
+            let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil)))
+            func alpha(_ x: Int, _ y: Int) throws -> CGFloat {
+                try XCTUnwrap(bitmap.colorAt(x: Int(CGFloat(x) * scale), y: Int(CGFloat(y) * scale))).alphaComponent
+            }
+            XCTAssertEqual(try alpha(0, 135), 0, accuracy: 0.01)
+            XCTAssertLessThan(try alpha(10, 135), 0.15)
+            XCTAssertGreaterThan(try alpha(22, 135), 0.45)
+            XCTAssertLessThan(try alpha(22, 135), 0.55)
+            XCTAssertGreaterThan(try alpha(42, 135), 0.99)
+            var previous: CGFloat = 0
+            for x in 0...45 {
+                let next = try alpha(x, 135)
+                XCTAssertGreaterThanOrEqual(next, previous)
+                XCTAssertLessThan(next - previous, 0.05, "A sharp contour reappeared at x=\(x)")
+                XCTAssertEqual(next, try alpha(192, x), accuracy: 0.01)
+                previous = next
+            }
+            XCTAssertEqual(try alpha(10, 10), 0, accuracy: 0.01)
+            XCTAssertGreaterThan(try alpha(36, 36), try alpha(22, 22))
+        }
+    }
 }
