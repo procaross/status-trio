@@ -90,8 +90,8 @@ private struct NativePopoverGlass: NSViewRepresentable {
     func makeNSView(context: Context) -> NSGlassEffectView {
         let view = NSGlassEffectView()
         view.style = .clear
-        // The shared backdrop provides diffusion. Clear glass adds the native
-        // refractive edge without a second regular material's milky fill.
+        // The shared compositor layer blurs the real background. Clear glass
+        // supplies each control's refraction, tint and subtle native shadow.
         view.appearance = NSAppearance(named: .aqua)
         view.tintColor = NSColor.black.withAlphaComponent(0.22)
         view.cornerRadius = radius
