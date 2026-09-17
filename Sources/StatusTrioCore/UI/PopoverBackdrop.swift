@@ -8,7 +8,7 @@ import SwiftUI
 struct PopoverBackdrop: NSViewRepresentable {
     func makeNSView(context: Context) -> FeatheredBackdropView {
         let view = FeatheredBackdropView()
-        view.material = .hudWindow
+        view.material = .popover
         view.blendingMode = .behindWindow
         view.state = .active
         return view
