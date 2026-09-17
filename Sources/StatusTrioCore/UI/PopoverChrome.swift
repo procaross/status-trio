@@ -13,16 +13,21 @@ struct PopoverSectionSurface: ViewModifier {
     }
 }
 
-struct PopoverGlassSurface: ViewModifier {
+struct PopoverGlassSurface: AnimatableModifier {
     let reduceTransparency: Bool
     var radius: CGFloat = 32
-    var highlight: Double = 0
+    nonisolated var highlight: Double = 0
+    var surfaceScale: CGFloat = 1
+    nonisolated var animatableData: Double {
+        get { highlight }
+        set { highlight = newValue }
+    }
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: radius, style: .continuous) }
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if reduceTransparency {
-            content.background(Color(nsColor: .controlBackgroundColor), in: shape)
+            content.background(Color(nsColor: .controlBackgroundColor), in: shape.scale(surfaceScale))
         } else {
 #if compiler(>=6.2)
             if #available(macOS 26.0, *) {
@@ -31,16 +36,47 @@ struct PopoverGlassSurface: ViewModifier {
                     .environment(\.colorScheme, .dark)
                     .background {
                         NativePopoverGlass(radius: radius, highlight: highlight)
+                            .overlay { shape.fill(.white.opacity(highlight * 0.10)) }
+                            .scaleEffect(surfaceScale)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
             } else {
-                content.background(.ultraThinMaterial, in: shape)
+                content.background(.ultraThinMaterial, in: shape.scale(surfaceScale))
             }
 #else
-            content.background(.ultraThinMaterial, in: shape)
+            content.background(.ultraThinMaterial, in: shape.scale(surfaceScale))
 #endif
         }
+    }
+}
+
+/// A control group is not a Button: observe presses without capturing its slider
+/// or child buttons. Only the glass scales, so dragging never shifts the track.
+struct PopoverInteractiveSectionSurface: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @State private var isHovered = false
+    @State private var isPressed = false
+
+    func body(content: Content) -> some View {
+        content
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(PopoverGlassSurface(
+                reduceTransparency: reduceTransparency,
+                highlight: isPressed ? 1 : (isHovered ? 0.55 : 0),
+                surfaceScale: reduceMotion ? 1 : (isPressed ? 0.975 : (isHovered ? 1.008 : 1))
+            ))
+            .overlay {
+                PopoverPressObserver(isPressed: $isPressed)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+            .onHover { isHovered = $0 }
+            .animation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.72), value: isPressed)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isHovered)
     }
 }
 
